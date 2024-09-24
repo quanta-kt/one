@@ -44,9 +44,14 @@ static void walk_str(ast_walker* _, ast_node_str* node) {
     printf("(str '%s')", node->str);
 }
 
+static void walk_bool(ast_walker* _, ast_node_bool* node) {
+    printf("%s", node->value ? "true" : "false");
+}
+
 ast_walker walk_printer = (ast_walker){
     .walk_binary = walk_binary,
     .walk_num = walk_num,
     .walk_iden = walk_iden,
     .walk_str = walk_str,
+    .walk_bool = walk_bool,
 };

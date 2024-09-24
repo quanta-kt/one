@@ -21,6 +21,7 @@ static ast_node* number(parser_t* parser);
 static ast_node* iden(parser_t* parser);
 static ast_node* group(parser_t* parser);
 static ast_node* str(parser_t* parser);
+static ast_node* boolean(parser_t* parser);
 
 static void __die(char* err) {
     fprintf(stderr, "%s\n", err);
@@ -112,6 +113,10 @@ static ast_node* factor(parser_t* parser) {
 
         case TOK_STR:
             return str(parser);
+
+        case TOK_TRUE:
+        case TOK_FALSE:
+            return boolean(parser);
 
         default:
             __die("expected primary expression");
@@ -205,6 +210,11 @@ static ast_node* str(parser_t* parser) {
     return make_ast_str(parser->allocator, str, len, size);
 
 #undef SUBSTITUTE
+}
+
+static ast_node* boolean(parser_t* parser) {
+    advance(parser);
+    return make_ast_bool(parser->allocator, parser->prev.type == TOK_TRUE);
 }
 
 ast_node* parse(allocator_t* allocator, char* src, size_t src_len) {

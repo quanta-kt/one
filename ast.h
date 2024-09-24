@@ -6,6 +6,7 @@
 
 typedef enum {
     AST_NUM,
+    AST_BOOL,
     AST_STR,
     AST_IDEN,
     AST_BINARY,
@@ -28,6 +29,10 @@ typedef struct {
 } ast_node_str;
 
 typedef struct {
+    bool value;
+} ast_node_bool;
+
+typedef struct {
     char* start;
     size_t len;
 } ast_node_identifier;
@@ -41,6 +46,7 @@ typedef struct {
 typedef struct _ast_node {
     union {
         ast_node_num num;
+        ast_node_bool boolean;
         ast_node_str str;
         ast_node_binary binary;
         ast_node_identifier identifier;
@@ -56,10 +62,14 @@ typedef struct _ast_walker {
     void (*walk_num)(struct _ast_walker*, ast_node_num*);
     void (*walk_iden)(struct _ast_walker*, ast_node_identifier*);
     void (*walk_str)(struct _ast_walker*, ast_node_str*);
+    void (*walk_bool)(struct _ast_walker*, ast_node_bool*);
 } ast_walker;
 
 ast_node* make_ast_num(allocator_t* allocator, double long value);
-ast_node* make_ast_str(allocator_t* allocator, char* str, size_t len, size_t size);
+ast_node* make_ast_bool(allocator_t* allocator, bool value);
+ast_node* make_ast_str(
+    allocator_t* allocator, char* str, size_t len, size_t size
+);
 ast_node* make_ast_identifier(allocator_t* allocator, char* start, size_t len);
 ast_node* make_ast_binary(
     allocator_t* allocator, token_type op, ast_node* left, ast_node* right

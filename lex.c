@@ -2,6 +2,7 @@
 
 #include <ctype.h>
 #include <stdbool.h>
+#include <string.h>
 
 static token make_token(token_type tt, char* span, size_t size) {
     return (token){.type = tt, .span = span, .span_size = size};
@@ -50,7 +51,16 @@ static token token_iden(lexer_t* lex) {
     while (is_alpha_num(*end)) end++;
     lex->curr = end;
 
-    return make_token(TOK_IDEN, start, end - start);
+    token_type tt;
+    if (memcmp(start, "true", 4) == 0) {
+        tt = TOK_TRUE;
+    } else if (memcmp(start, "false", 5) == 0) {
+        tt = TOK_FALSE;
+    } else {
+        tt = TOK_IDEN;
+    }
+
+    return make_token(tt, start, end - start);
 }
 
 static token_result token_str(lexer_t* lex) {

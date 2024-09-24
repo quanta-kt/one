@@ -10,6 +10,9 @@ typedef enum {
     TOK_NUM,
     TOK_STR,
 
+    TOK_TRUE,
+    TOK_FALSE,
+
     TOK_PLUS,
     TOK_MINUS,
     TOK_DIV,

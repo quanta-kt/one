@@ -12,6 +12,14 @@ ast_node* make_ast_num(allocator_t* allocator, double long value) {
     return node;
 }
 
+ast_node* make_ast_bool(allocator_t* allocator, bool value) {
+    ast_node* node = ALLOC(allocator, ast_node);
+    node->type = AST_BOOL;
+    node->boolean.value = value;
+
+    return node;
+}
+
 ast_node* make_ast_str(
     allocator_t* allocator, char* str, size_t len, size_t size
 ) {
@@ -65,6 +73,10 @@ void ast_walk(ast_walker* walker, ast_node* node) {
     switch (node->type) {
         case AST_NUM:
             walker->walk_num(walker, &node->num);
+            break;
+
+        case AST_BOOL:
+            walker->walk_bool(walker, &node->boolean);
             break;
 
         case AST_IDEN:
