@@ -1,0 +1,61 @@
+#ifndef LEX_H
+#define LEX_H
+
+#include <stdbool.h>
+#include <stddef.h>
+
+typedef enum {
+    TOK_IDEN,
+
+    TOK_NUM,
+    TOK_STR,
+
+    TOK_PLUS,
+    TOK_MINUS,
+    TOK_DIV,
+    TOK_MUL,
+
+    TOK_PAREN_OPEN,
+    TOK_PAREN_CLOSE,
+
+    TOK_EOF,
+} token_type;
+
+typedef struct {
+    token_type type;
+    char* span;
+    size_t span_size;
+} token;
+
+typedef enum {
+    LEX_ERR_UNEXPECTED_CHAR,
+    LEX_ERR_UNTERMINATED_STRING,
+} lex_error_type;
+
+typedef struct {
+    lex_error_type type;
+    char* span;
+    size_t span_size;
+} lex_error;
+
+typedef struct {
+    union {
+        token t;
+        lex_error e;
+    };
+
+    bool ok : 1;
+} token_result;
+
+typedef struct {
+    char* src;
+    size_t size;
+
+    char* curr;
+} lexer_t;
+
+lexer_t make_lexer(char* src, size_t size);
+bool lex_eof(lexer_t* lex);
+token_result lex_advance();
+
+#endif  // LEX_H
