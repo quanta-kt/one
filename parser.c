@@ -68,6 +68,11 @@ static token advance(parser_t* parser) {
     return res.t;
 }
 
+static ast_stmt_node* stmt(parser_t* parser) {
+    ast_expr_node* expr_node = expr(parser);
+    return make_ast_expr_stmt(parser->allocator, expr_node);
+}
+
 static ast_expr_node* expr(parser_t* parser) {
     ast_expr_node* left = term(parser);
 
@@ -217,8 +222,8 @@ static ast_expr_node* boolean(parser_t* parser) {
     return make_ast_bool(parser->allocator, parser->prev.type == TOK_TRUE);
 }
 
-ast_expr_node* parse(allocator_t* allocator, char* src, size_t src_len) {
+ast_stmt_node* parse(allocator_t* allocator, char* src, size_t src_len) {
     parser_t parser = make_parser(allocator, make_lexer(src, src_len));
     advance(&parser);
-    return expr(&parser);
+    return stmt(&parser);
 }

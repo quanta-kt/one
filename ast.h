@@ -107,20 +107,33 @@ typedef enum {
 
 struct _ast_stmt_node;
 
+typedef struct {
+    ast_expr_node* expr;
+} ast_node_expr_stmt;
+
 typedef struct _ast_stmt_node {
-    union {};
+    union {
+        ast_node_expr_stmt expr_stmt;
+    };
     ast_stmt_node_type type;
 } ast_stmt_node;
 
+ast_stmt_node* make_ast_expr_stmt(allocator_t* allocator, ast_expr_node* expr);
+
 void free_ast_stmt(allocator_t* allocator, ast_stmt_node* node);
 
-#define AST_STMT_WALKER(name, return_type)                       \
-    struct _##name;                                              \
-    typedef struct _##name {                                     \
-    } name;                                                      \
-                                                                 \
-    return_type name##_walk(name* walker, ast_expr_node* node) { \
-        switch (node->type) {}                                   \
+#define AST_STMT_WALKER(name, return_type)                                   \
+    struct _##name;                                                          \
+    typedef struct _##name {                                                 \
+        return_type (*walk_expr_stmt)(struct _##name*, ast_node_expr_stmt*); \
+    } name;                                                                  \
+                                                                             \
+    return_type name##_walk(name* walker, ast_stmt_node* node) {             \
+        switch (node->type) {                                                \
+            case AST_EXPR_STMT: {                                            \
+                return walker->walk_expr_stmt(walker, &node->expr_stmt);     \
+            }                                                                \
+        }                                                                    \
     }
 
 #endif  // AST_H

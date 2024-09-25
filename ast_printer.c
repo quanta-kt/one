@@ -4,17 +4,19 @@
 
 #include "ast.h"
 
-AST_EXPR_WALKER(ast_printer_t, void)
+AST_EXPR_WALKER(ast_expr_printer_t, void)
 
-static void walk_num(ast_printer_t* _, ast_node_num* node) {
+AST_STMT_WALKER(ast_stmt_printer_t, void)
+
+static void walk_num(ast_expr_printer_t* _, ast_node_num* node) {
     printf("%Le", node->value);
 }
 
-static void walk_iden(ast_printer_t* _, ast_node_identifier* node) {
+static void walk_iden(ast_expr_printer_t* _, ast_node_identifier* node) {
     printf("%.*s", (int)node->len, node->start);
 }
 
-static void walk_binary(ast_printer_t* self, ast_node_binary* node) {
+static void walk_binary(ast_expr_printer_t* self, ast_node_binary* node) {
     char op = '?';
 
     switch (node->op) {
@@ -36,21 +38,21 @@ static void walk_binary(ast_printer_t* self, ast_node_binary* node) {
     }
 
     printf("(%c ", op);
-    ast_printer_t_walk(self, node->left);
+    ast_expr_printer_t_walk(self, node->left);
     printf(" ");
-    ast_printer_t_walk(self, node->right);
+    ast_expr_printer_t_walk(self, node->right);
     printf(")");
 }
 
-static void walk_str(ast_printer_t* _, ast_node_str* node) {
+static void walk_str(ast_expr_printer_t* _, ast_node_str* node) {
     printf("(str '%s')", node->str);
 }
 
-static void walk_bool(ast_printer_t* _, ast_node_bool* node) {
+static void walk_bool(ast_expr_printer_t* _, ast_node_bool* node) {
     printf("%s", node->value ? "true" : "false");
 }
 
-ast_printer_t walk_printer = (ast_printer_t){
+ast_expr_printer_t expr_printer = (ast_expr_printer_t){
     .walk_binary = walk_binary,
     .walk_num = walk_num,
     .walk_iden = walk_iden,
@@ -58,7 +60,20 @@ ast_printer_t walk_printer = (ast_printer_t){
     .walk_bool = walk_bool,
 };
 
-void print_ast(ast_expr_node* node) {
-    ast_printer_t_walk(&walk_printer, node);
+static void print_expr(ast_expr_node* node) {
+    ast_expr_printer_t_walk(&expr_printer, node);
+}
+
+static void walk_expr_stmt(ast_stmt_printer_t* self, ast_node_expr_stmt* node) {
+    print_expr(node->expr);
+    printf(";");
+}
+
+ast_stmt_printer_t stmt_printer = (ast_stmt_printer_t){
+    .walk_expr_stmt = walk_expr_stmt,
+};
+
+void print_ast(ast_stmt_node* node) {
+    ast_stmt_printer_t_walk(&stmt_printer, node);
     putchar('\n');
 }

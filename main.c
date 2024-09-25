@@ -12,9 +12,9 @@ int main() {
     allocator_t* allocator = gpa();
 
     while (getline(&line, &len, stdin) != -1) {
-        ast_expr_node* ast = parse(allocator, line, len);
+        ast_stmt_node* ast = parse(allocator, line, len);
 
         print_ast(ast);
-        free_ast_expr(allocator, ast);
+        free_ast_stmt(allocator, ast);
     }
 }
