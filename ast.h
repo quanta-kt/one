@@ -116,6 +116,8 @@ typedef struct _ast_stmt_node {
         ast_node_expr_stmt expr_stmt;
     };
     ast_stmt_node_type type;
+
+    struct _ast_stmt_node* next;
 } ast_stmt_node;
 
 ast_stmt_node* make_ast_expr_stmt(allocator_t* allocator, ast_expr_node* expr);

@@ -12,6 +12,9 @@ typedef struct {
 
     token curr;
     token prev;
+
+    ast_stmt_node* ast_head;
+    ast_stmt_node* ast_tail;
 } parser_t;
 
 static ast_expr_node* expr(parser_t* parser);
@@ -53,7 +56,20 @@ static parser_t make_parser(allocator_t* allocator, lexer_t lexer) {
     return (parser_t){
         .lexer = lexer,
         .allocator = allocator,
+
+        .ast_head = NULL,
+        .ast_tail = NULL,
     };
+}
+
+static void insert_stmt(parser_t* parser, ast_stmt_node* node) {
+    if (parser->ast_head == NULL) {
+        parser->ast_head = (parser->ast_tail = node);
+        return;
+    }
+
+    parser->ast_tail->next = node;
+    parser->ast_tail = node;
 }
 
 static token advance(parser_t* parser) {
@@ -233,5 +249,10 @@ static ast_expr_node* boolean(parser_t* parser) {
 ast_stmt_node* parse(allocator_t* allocator, char* src, size_t src_len) {
     parser_t parser = make_parser(allocator, make_lexer(src, src_len));
     advance(&parser);
-    return stmt(&parser);
+
+    do {
+        insert_stmt(&parser, stmt(&parser));
+    } while (!lex_eof(&parser.lexer));
+
+    return parser.ast_head;
 }

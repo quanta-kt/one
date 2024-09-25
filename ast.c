@@ -74,15 +74,21 @@ void free_ast_expr(allocator_t* allocator, ast_expr_node* node) {
     FREE(allocator, node, ast_expr_node);
 }
 
+ast_stmt_node stmt_node_defaults = {
+    .next = NULL,
+};
+
 ast_stmt_node* make_ast_expr_stmt(allocator_t* allocator, ast_expr_node* expr) {
     ast_stmt_node* node = ALLOC(allocator, ast_stmt_node);
+    *node = stmt_node_defaults;
+
     node->type = AST_EXPR_STMT;
     node->expr_stmt.expr = expr;
 
     return node;
 }
 
-void free_ast_stmt(allocator_t* allocator, ast_stmt_node* node) {
+static void _free_ast_stmt(allocator_t* allocator, ast_stmt_node* node) {
     switch (node->type) {
         case AST_EXPR_STMT: {
             free_ast_expr(allocator, node->expr_stmt.expr);
@@ -91,4 +97,12 @@ void free_ast_stmt(allocator_t* allocator, ast_stmt_node* node) {
     }
 
     FREE(allocator, node, ast_stmt_node);
+}
+
+void free_ast_stmt(allocator_t* allocator, ast_stmt_node* node) {
+    while (node != NULL) {
+        ast_stmt_node* next = node->next;
+        _free_ast_stmt(allocator, node);
+        node = next;
+    }
 }

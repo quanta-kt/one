@@ -74,6 +74,11 @@ ast_stmt_printer_t stmt_printer = (ast_stmt_printer_t){
 };
 
 void print_ast(ast_stmt_node* node) {
-    ast_stmt_printer_t_walk(&stmt_printer, node);
-    putchar('\n');
+    ast_stmt_node* curr = node;
+
+    while (curr != NULL) {
+        ast_stmt_printer_t_walk(&stmt_printer, curr);
+        putchar('\n');
+        curr = curr->next;
+    }
 }
