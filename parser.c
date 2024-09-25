@@ -18,6 +18,7 @@ typedef struct {
 } parser_t;
 
 static ast_stmt_node* var_decl(parser_t* parser);
+static ast_stmt_node* block(parser_t* parser);
 static ast_stmt_node* expr_stmt(parser_t* parser);
 static ast_expr_node* expr(parser_t* parser);
 static ast_expr_node* term(parser_t* parser);
@@ -94,15 +95,13 @@ static ast_stmt_node* stmt(parser_t* parser) {
             node = var_decl(parser);
             break;
 
+        case TOK_BRACE_OPEN:
+            node = block(parser);
+            break;
+
         default:
             node = expr_stmt(parser);
     }
-
-    if (parser->curr.type != TOK_SEMI) {
-        __die("expected ';' after statement");
-    }
-
-    advance(parser);
 
     return node;
 }
@@ -118,12 +117,54 @@ static ast_stmt_node* var_decl(parser_t* parser) {
         value = expr(parser);
     }
 
+    if (parser->curr.type != TOK_SEMI) {
+        __die("expected ';' after variable declaration");
+    }
+
+    advance(parser);
+
     return make_ast_var_decl(parser->allocator, name, value);
+}
+
+static ast_stmt_node* block(parser_t* parser) {
+    advance(parser);  // {
+
+    ast_stmt_node* body = NULL;
+    ast_stmt_node* tail = NULL;
+
+    while (parser->curr.type != TOK_BRACE_CLOSE && parser->curr.type != TOK_EOF
+    ) {
+        ast_stmt_node* next = stmt(parser);
+
+        if (tail == NULL) {
+            tail = next;
+            body = next;
+        } else {
+            tail->next = next;
+        }
+
+        tail = next;
+    }
+
+    token end = parser->curr;
+    if (end.type != TOK_BRACE_CLOSE) {
+        __die("unclosed block");
+    }
+
+    advance(parser);  // }
+
+    return make_ast_block(parser->allocator, body);
 }
 
 static ast_stmt_node* expr_stmt(parser_t* parser) {
     ast_expr_node* expr_node = expr(parser);
     ast_stmt_node* node = make_ast_expr_stmt(parser->allocator, expr_node);
+
+    if (parser->curr.type != TOK_SEMI) {
+        __die("expected ';' after statement");
+    }
+
+    advance(parser);
 
     return node;
 }

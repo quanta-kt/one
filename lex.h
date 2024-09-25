@@ -31,6 +31,9 @@ typedef enum {
     TOK_PAREN_OPEN,
     TOK_PAREN_CLOSE,
 
+    TOK_BRACE_OPEN,
+    TOK_BRACE_CLOSE,
+
     TOK_SEMI,
 
     TOK_EOF,

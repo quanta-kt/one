@@ -101,6 +101,16 @@ ast_stmt_node* make_ast_var_decl(
     return node;
 }
 
+ast_stmt_node* make_ast_block(allocator_t* allocator, ast_stmt_node* body) {
+    ast_stmt_node* node = ALLOC(allocator, ast_stmt_node);
+    *node = stmt_node_defaults;
+
+    node->type = AST_BLOCK;
+    node->block.body = body;
+
+    return node;
+}
+
 static void _free_ast_stmt(allocator_t* allocator, ast_stmt_node* node) {
     switch (node->type) {
         case AST_EXPR_STMT: {
@@ -110,6 +120,11 @@ static void _free_ast_stmt(allocator_t* allocator, ast_stmt_node* node) {
 
         case AST_VAR_DECL: {
             free_ast_expr(allocator, node->var_decl.value);
+            break;
+        }
+
+        case AST_BLOCK: {
+            free_ast_stmt(allocator, node->block.body);
             break;
         }
     }

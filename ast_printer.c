@@ -79,9 +79,23 @@ static void walk_var_decl(ast_stmt_printer_t* self, ast_node_var_decl* node) {
     printf(");");
 }
 
+static void walk_block(ast_stmt_printer_t* self, ast_node_block* node) {
+    printf("(block");
+
+    ast_stmt_node* curr = node->body;
+    while (curr != NULL) {
+        putchar(' ');
+        ast_stmt_printer_t_walk(self, curr);
+        curr = curr->next;
+    }
+
+    printf(");");
+}
+
 ast_stmt_printer_t stmt_printer = (ast_stmt_printer_t){
     .walk_expr_stmt = walk_expr_stmt,
     .walk_var_decl = walk_var_decl,
+    .walk_block = walk_block
 };
 
 void print_ast(ast_stmt_node* node) {

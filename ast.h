@@ -104,6 +104,7 @@ void free_ast_expr(allocator_t* allocator, ast_expr_node* node);
 typedef enum {
     AST_EXPR_STMT,
     AST_VAR_DECL,
+    AST_BLOCK,
 } ast_stmt_node_type;
 
 struct _ast_stmt_node;
@@ -117,10 +118,15 @@ typedef struct {
     ast_expr_node* value;
 } ast_node_var_decl;
 
+typedef struct {
+    struct _ast_stmt_node* body;
+} ast_node_block;
+
 typedef struct _ast_stmt_node {
     union {
         ast_node_expr_stmt expr_stmt;
         ast_node_var_decl var_decl;
+        ast_node_block block;
     };
     ast_stmt_node_type type;
 
@@ -131,6 +137,7 @@ ast_stmt_node* make_ast_expr_stmt(allocator_t* allocator, ast_expr_node* expr);
 ast_stmt_node* make_ast_var_decl(
     allocator_t* allocator, token name, ast_expr_node* value
 );
+ast_stmt_node* make_ast_block(allocator_t* allocator, ast_stmt_node* body);
 
 void free_ast_stmt(allocator_t* allocator, ast_stmt_node* node);
 
@@ -139,6 +146,7 @@ void free_ast_stmt(allocator_t* allocator, ast_stmt_node* node);
     typedef struct _##name {                                                 \
         return_type (*walk_expr_stmt)(struct _##name*, ast_node_expr_stmt*); \
         return_type (*walk_var_decl)(struct _##name*, ast_node_var_decl*);   \
+        return_type (*walk_block)(struct _##name*, ast_node_block*);         \
     } name;                                                                  \
                                                                              \
     return_type name##_walk(name* walker, ast_stmt_node* node) {             \
@@ -148,6 +156,9 @@ void free_ast_stmt(allocator_t* allocator, ast_stmt_node* node);
             }                                                                \
             case AST_VAR_DECL: {                                             \
                 return walker->walk_var_decl(walker, &node->var_decl);       \
+            }                                                                \
+            case AST_BLOCK: {                                                \
+                return walker->walk_block(walker, &node->block);             \
             }                                                                \
         }                                                                    \
     }
