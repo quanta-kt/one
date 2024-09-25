@@ -128,6 +128,8 @@ token_result lex_advance(lexer_t* lex) {
             return SINGLE(TOK_PAREN_OPEN);
         case ')':
             return SINGLE(TOK_PAREN_CLOSE);
+        case ';':
+            return SINGLE(TOK_SEMI);
         case '"':
             return token_str(lex);
     }

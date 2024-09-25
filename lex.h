@@ -21,6 +21,8 @@ typedef enum {
     TOK_PAREN_OPEN,
     TOK_PAREN_CLOSE,
 
+    TOK_SEMI,
+
     TOK_EOF,
 } token_type;
 

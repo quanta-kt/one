@@ -70,7 +70,15 @@ static token advance(parser_t* parser) {
 
 static ast_stmt_node* stmt(parser_t* parser) {
     ast_expr_node* expr_node = expr(parser);
-    return make_ast_expr_stmt(parser->allocator, expr_node);
+    ast_stmt_node* node = make_ast_expr_stmt(parser->allocator, expr_node);
+
+    if (parser->curr.type != TOK_SEMI) {
+        __die("expected ';' after statement");
+    }
+
+    advance(parser);
+
+    return node;
 }
 
 static ast_expr_node* expr(parser_t* parser) {
