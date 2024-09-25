@@ -107,6 +107,23 @@ ast_stmt_node* make_ast_block(allocator_t* allocator, ast_stmt_node* body) {
 
     node->type = AST_BLOCK;
     node->block.body = body;
+}
+
+ast_stmt_node* make_ast_if_else(
+    allocator_t* allocator,
+    ast_expr_node* condition,
+    ast_stmt_node* body,
+    ast_stmt_node* else_body
+) {
+    ast_stmt_node* node = ALLOC(allocator, ast_stmt_node);
+    *node = stmt_node_defaults;
+
+    node->type = AST_IF_ELSE;
+    node->if_else = (ast_node_if_else){
+        .condition = condition,
+        .body = body,
+        .else_body = else_body,
+    };
 
     return node;
 }
@@ -125,6 +142,13 @@ static void _free_ast_stmt(allocator_t* allocator, ast_stmt_node* node) {
 
         case AST_BLOCK: {
             free_ast_stmt(allocator, node->block.body);
+            break;
+        }
+
+        case AST_IF_ELSE: {
+            free_ast_expr(allocator, node->if_else.condition);
+            free_ast_stmt(allocator, node->if_else.body);
+            free_ast_stmt(allocator, node->if_else.else_body);
             break;
         }
     }

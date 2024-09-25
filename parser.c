@@ -19,6 +19,7 @@ typedef struct {
 
 static ast_stmt_node* var_decl(parser_t* parser);
 static ast_stmt_node* block(parser_t* parser);
+static ast_stmt_node* if_else(parser_t* parser);
 static ast_stmt_node* expr_stmt(parser_t* parser);
 static ast_expr_node* expr(parser_t* parser);
 static ast_expr_node* term(parser_t* parser);
@@ -99,6 +100,10 @@ static ast_stmt_node* stmt(parser_t* parser) {
             node = block(parser);
             break;
 
+        case TOK_IF:
+            node = if_else(parser);
+            break;
+
         default:
             node = expr_stmt(parser);
     }
@@ -154,6 +159,34 @@ static ast_stmt_node* block(parser_t* parser) {
     advance(parser);  // }
 
     return make_ast_block(parser->allocator, body);
+}
+
+static ast_stmt_node* if_else(parser_t* parser) {
+    advance(parser);  // if
+    ast_expr_node* condition = expr(parser);
+
+    token brace_open = parser->curr;
+    if (brace_open.type != TOK_BRACE_OPEN) {
+        __die("expected '{' after if");
+    }
+
+    ast_stmt_node* body = block(parser);
+
+    ast_stmt_node* else_body = NULL;
+
+    if (parser->curr.type == TOK_ELSE) {
+        advance(parser);
+
+        if (parser->curr.type == TOK_IF) {
+            else_body = if_else(parser);
+        } else if (parser->curr.type == TOK_BRACE_OPEN) {
+            else_body = block(parser);
+        } else {
+            __die("expected 'if' or '{' after else");
+        }
+    }
+
+    return make_ast_if_else(parser->allocator, condition, body, else_body);
 }
 
 static ast_stmt_node* expr_stmt(parser_t* parser) {

@@ -92,10 +92,26 @@ static void walk_block(ast_stmt_printer_t* self, ast_node_block* node) {
     printf(");");
 }
 
+static void walk_if_else(ast_stmt_printer_t* self, ast_node_if_else* node) {
+    printf("(if ");
+    print_expr(node->condition);
+
+    putchar(' ');
+    ast_stmt_printer_t_walk(self, node->body);
+
+    if (node->else_body != NULL) {
+        putchar(' ');
+        ast_stmt_printer_t_walk(self, node->else_body);
+    }
+
+    printf(")");
+}
+
 ast_stmt_printer_t stmt_printer = (ast_stmt_printer_t){
     .walk_expr_stmt = walk_expr_stmt,
     .walk_var_decl = walk_var_decl,
-    .walk_block = walk_block
+    .walk_block = walk_block,
+    .walk_if_else = walk_if_else,
 };
 
 void print_ast(ast_stmt_node* node) {

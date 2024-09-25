@@ -105,6 +105,7 @@ typedef enum {
     AST_EXPR_STMT,
     AST_VAR_DECL,
     AST_BLOCK,
+    AST_IF_ELSE,
 } ast_stmt_node_type;
 
 struct _ast_stmt_node;
@@ -122,11 +123,18 @@ typedef struct {
     struct _ast_stmt_node* body;
 } ast_node_block;
 
+typedef struct {
+    ast_expr_node* condition;
+    struct _ast_stmt_node* body;
+    struct _ast_stmt_node* else_body;
+} ast_node_if_else;
+
 typedef struct _ast_stmt_node {
     union {
         ast_node_expr_stmt expr_stmt;
         ast_node_var_decl var_decl;
         ast_node_block block;
+        ast_node_if_else if_else;
     };
     ast_stmt_node_type type;
 
@@ -139,6 +147,13 @@ ast_stmt_node* make_ast_var_decl(
 );
 ast_stmt_node* make_ast_block(allocator_t* allocator, ast_stmt_node* body);
 
+ast_stmt_node* make_ast_if_else(
+    allocator_t* allocator,
+    ast_expr_node* condition,
+    ast_stmt_node* body,
+    ast_stmt_node* else_body
+);
+
 void free_ast_stmt(allocator_t* allocator, ast_stmt_node* node);
 
 #define AST_STMT_WALKER(name, return_type)                                   \
@@ -147,6 +162,7 @@ void free_ast_stmt(allocator_t* allocator, ast_stmt_node* node);
         return_type (*walk_expr_stmt)(struct _##name*, ast_node_expr_stmt*); \
         return_type (*walk_var_decl)(struct _##name*, ast_node_var_decl*);   \
         return_type (*walk_block)(struct _##name*, ast_node_block*);         \
+        return_type (*walk_if_else)(struct _##name*, ast_node_if_else*);     \
     } name;                                                                  \
                                                                              \
     return_type name##_walk(name* walker, ast_stmt_node* node) {             \
@@ -159,6 +175,9 @@ void free_ast_stmt(allocator_t* allocator, ast_stmt_node* node);
             }                                                                \
             case AST_BLOCK: {                                                \
                 return walker->walk_block(walker, &node->block);             \
+            }                                                                \
+            case AST_IF_ELSE: {                                              \
+                return walker->walk_if_else(walker, &node->if_else);         \
             }                                                                \
         }                                                                    \
     }
