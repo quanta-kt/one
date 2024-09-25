@@ -10,9 +10,9 @@ typedef enum {
     AST_STR,
     AST_IDEN,
     AST_BINARY,
-} ast_node_type;
+} ast_expr_node_type;
 
-struct _ast_node;
+struct _ast_expr_node;
 
 typedef struct {
     long double value;
@@ -39,11 +39,11 @@ typedef struct {
 
 typedef struct {
     token_type op;
-    struct _ast_node* left;
-    struct _ast_node* right;
+    struct _ast_expr_node* left;
+    struct _ast_expr_node* right;
 } ast_node_binary;
 
-typedef struct _ast_node {
+typedef struct _ast_expr_node {
     union {
         ast_node_num num;
         ast_node_bool boolean;
@@ -52,22 +52,27 @@ typedef struct _ast_node {
         ast_node_identifier identifier;
     };
 
-    ast_node_type type;
-} ast_node;
+    ast_expr_node_type type;
+} ast_expr_node;
 
-ast_node* make_ast_num(allocator_t* allocator, double long value);
-ast_node* make_ast_bool(allocator_t* allocator, bool value);
-ast_node* make_ast_str(
+ast_expr_node* make_ast_num(allocator_t* allocator, double long value);
+ast_expr_node* make_ast_bool(allocator_t* allocator, bool value);
+ast_expr_node* make_ast_str(
     allocator_t* allocator, char* str, size_t len, size_t size
 );
-ast_node* make_ast_identifier(allocator_t* allocator, char* start, size_t len);
-ast_node* make_ast_binary(
-    allocator_t* allocator, token_type op, ast_node* left, ast_node* right
+ast_expr_node* make_ast_identifier(
+    allocator_t* allocator, char* start, size_t len
+);
+ast_expr_node* make_ast_binary(
+    allocator_t* allocator,
+    token_type op,
+    ast_expr_node* left,
+    ast_expr_node* right
 );
 
-void free_ast(allocator_t* allocator, ast_node* node);
+void free_ast_expr(allocator_t* allocator, ast_expr_node* node);
 
-#define AST_WALKER(name, return_type)                                    \
+#define AST_EXPR_WALKER(name, return_type)                               \
     struct _##name;                                                      \
     typedef struct _##name {                                             \
         return_type (*walk_binary)(struct _##name*, ast_node_binary*);   \
@@ -77,7 +82,7 @@ void free_ast(allocator_t* allocator, ast_node* node);
         return_type (*walk_bool)(struct _##name*, ast_node_bool*);       \
     } name;                                                              \
                                                                          \
-    return_type name##_walk(name* walker, ast_node* node) {              \
+    return_type name##_walk(name* walker, ast_expr_node* node) {         \
         switch (node->type) {                                            \
             case AST_NUM:                                                \
                 return walker->walk_num(walker, &node->num);             \
@@ -94,6 +99,28 @@ void free_ast(allocator_t* allocator, ast_node* node);
             case AST_STR:                                                \
                 return walker->walk_str(walker, &node->str);             \
         }                                                                \
+    }
+
+typedef enum {
+    AST_EXPR_STMT,
+} ast_stmt_node_type;
+
+struct _ast_stmt_node;
+
+typedef struct _ast_stmt_node {
+    union {};
+    ast_stmt_node_type type;
+} ast_stmt_node;
+
+void free_ast_stmt(allocator_t* allocator, ast_stmt_node* node);
+
+#define AST_STMT_WALKER(name, return_type)                       \
+    struct _##name;                                              \
+    typedef struct _##name {                                     \
+    } name;                                                      \
+                                                                 \
+    return_type name##_walk(name* walker, ast_expr_node* node) { \
+        switch (node->type) {}                                   \
     }
 
 #endif  // AST_H

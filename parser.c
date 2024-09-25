@@ -14,14 +14,14 @@ typedef struct {
     token prev;
 } parser_t;
 
-static ast_node* expr(parser_t* parser);
-static ast_node* term(parser_t* parser);
-static ast_node* factor(parser_t* parser);
-static ast_node* number(parser_t* parser);
-static ast_node* iden(parser_t* parser);
-static ast_node* group(parser_t* parser);
-static ast_node* str(parser_t* parser);
-static ast_node* boolean(parser_t* parser);
+static ast_expr_node* expr(parser_t* parser);
+static ast_expr_node* term(parser_t* parser);
+static ast_expr_node* factor(parser_t* parser);
+static ast_expr_node* number(parser_t* parser);
+static ast_expr_node* iden(parser_t* parser);
+static ast_expr_node* group(parser_t* parser);
+static ast_expr_node* str(parser_t* parser);
+static ast_expr_node* boolean(parser_t* parser);
 
 static void __die(char* err) {
     fprintf(stderr, "%s\n", err);
@@ -68,37 +68,37 @@ static token advance(parser_t* parser) {
     return res.t;
 }
 
-static ast_node* expr(parser_t* parser) {
-    ast_node* left = term(parser);
+static ast_expr_node* expr(parser_t* parser) {
+    ast_expr_node* left = term(parser);
 
     while (!lex_eof(&parser->lexer) &&
            (parser->curr.type == TOK_PLUS || parser->curr.type == TOK_MINUS)) {
         token op = parser->curr;
         advance(parser);
 
-        ast_node* right = term(parser);
+        ast_expr_node* right = term(parser);
         left = make_ast_binary(parser->allocator, op.type, left, right);
     }
 
     return left;
 }
 
-static ast_node* term(parser_t* parser) {
-    ast_node* left = factor(parser);
+static ast_expr_node* term(parser_t* parser) {
+    ast_expr_node* left = factor(parser);
 
     while (!lex_eof(&parser->lexer) &&
            (parser->curr.type == TOK_MUL || parser->curr.type == TOK_DIV)) {
         token op = parser->curr;
         advance(parser);
 
-        ast_node* right = factor(parser);
+        ast_expr_node* right = factor(parser);
         left = make_ast_binary(parser->allocator, op.type, left, right);
     }
 
     return left;
 }
 
-static ast_node* factor(parser_t* parser) {
+static ast_expr_node* factor(parser_t* parser) {
     token_type tt = parser->curr.type;
 
     switch (tt) {
@@ -123,22 +123,22 @@ static ast_node* factor(parser_t* parser) {
     }
 }
 
-static ast_node* number(parser_t* parser) {
+static ast_expr_node* number(parser_t* parser) {
     token tok = parser->curr;
     advance(parser);
     return make_ast_num(parser->allocator, strtold(tok.span, NULL));
 }
 
-static ast_node* iden(parser_t* parser) {
+static ast_expr_node* iden(parser_t* parser) {
     token tok = parser->curr;
     advance(parser);
     return make_ast_identifier(parser->allocator, tok.span, tok.span_size);
 }
 
-static ast_node* group(parser_t* parser) {
+static ast_expr_node* group(parser_t* parser) {
     advance(parser);  // (
 
-    ast_node* result = expr(parser);
+    ast_expr_node* result = expr(parser);
     token closing = parser->curr;
 
     if (closing.type != TOK_PAREN_CLOSE) {
@@ -150,7 +150,7 @@ static ast_node* group(parser_t* parser) {
     return result;
 }
 
-static ast_node* str(parser_t* parser) {
+static ast_expr_node* str(parser_t* parser) {
 #define SUBSTITUTE(chr, replacement) \
     case chr:                        \
         str[len++] = replacement;    \
@@ -212,12 +212,12 @@ static ast_node* str(parser_t* parser) {
 #undef SUBSTITUTE
 }
 
-static ast_node* boolean(parser_t* parser) {
+static ast_expr_node* boolean(parser_t* parser) {
     advance(parser);
     return make_ast_bool(parser->allocator, parser->prev.type == TOK_TRUE);
 }
 
-ast_node* parse(allocator_t* allocator, char* src, size_t src_len) {
+ast_expr_node* parse(allocator_t* allocator, char* src, size_t src_len) {
     parser_t parser = make_parser(allocator, make_lexer(src, src_len));
     advance(&parser);
     return expr(&parser);

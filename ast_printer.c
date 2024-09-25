@@ -4,7 +4,7 @@
 
 #include "ast.h"
 
-AST_WALKER(ast_printer_t, void)
+AST_EXPR_WALKER(ast_printer_t, void)
 
 static void walk_num(ast_printer_t* _, ast_node_num* node) {
     printf("%Le", node->value);
@@ -58,7 +58,7 @@ ast_printer_t walk_printer = (ast_printer_t){
     .walk_bool = walk_bool,
 };
 
-void print_ast(ast_node* node) {
+void print_ast(ast_expr_node* node) {
     ast_printer_t_walk(&walk_printer, node);
     putchar('\n');
 }
