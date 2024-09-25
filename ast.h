@@ -55,16 +55,6 @@ typedef struct _ast_node {
     ast_node_type type;
 } ast_node;
 
-struct _ast_walker;
-
-typedef struct _ast_walker {
-    void (*walk_binary)(struct _ast_walker*, ast_node_binary*);
-    void (*walk_num)(struct _ast_walker*, ast_node_num*);
-    void (*walk_iden)(struct _ast_walker*, ast_node_identifier*);
-    void (*walk_str)(struct _ast_walker*, ast_node_str*);
-    void (*walk_bool)(struct _ast_walker*, ast_node_bool*);
-} ast_walker;
-
 ast_node* make_ast_num(allocator_t* allocator, double long value);
 ast_node* make_ast_bool(allocator_t* allocator, bool value);
 ast_node* make_ast_str(
@@ -77,6 +67,33 @@ ast_node* make_ast_binary(
 
 void free_ast(allocator_t* allocator, ast_node* node);
 
-void ast_walk(ast_walker* walker, ast_node* node);
+#define AST_WALKER(name, return_type)                                    \
+    struct _##name;                                                      \
+    typedef struct _##name {                                             \
+        return_type (*walk_binary)(struct _##name*, ast_node_binary*);   \
+        return_type (*walk_num)(struct _##name*, ast_node_num*);         \
+        return_type (*walk_iden)(struct _##name*, ast_node_identifier*); \
+        return_type (*walk_str)(struct _##name*, ast_node_str*);         \
+        return_type (*walk_bool)(struct _##name*, ast_node_bool*);       \
+    } name;                                                              \
+                                                                         \
+    return_type name##_walk(name* walker, ast_node* node) {              \
+        switch (node->type) {                                            \
+            case AST_NUM:                                                \
+                return walker->walk_num(walker, &node->num);             \
+                                                                         \
+            case AST_BOOL:                                               \
+                return walker->walk_bool(walker, &node->boolean);        \
+                                                                         \
+            case AST_IDEN:                                               \
+                return walker->walk_iden(walker, &node->identifier);     \
+                                                                         \
+            case AST_BINARY:                                             \
+                return walker->walk_binary(walker, &node->binary);       \
+                                                                         \
+            case AST_STR:                                                \
+                return walker->walk_str(walker, &node->str);             \
+        }                                                                \
+    }
 
 #endif  // AST_H

@@ -68,26 +68,3 @@ void free_ast(allocator_t* allocator, ast_node* node) {
 
     FREE(allocator, node, ast_node);
 }
-
-void ast_walk(ast_walker* walker, ast_node* node) {
-    switch (node->type) {
-        case AST_NUM:
-            walker->walk_num(walker, &node->num);
-            break;
-
-        case AST_BOOL:
-            walker->walk_bool(walker, &node->boolean);
-            break;
-
-        case AST_IDEN:
-            walker->walk_iden(walker, &node->identifier);
-            break;
-
-        case AST_BINARY:
-            walker->walk_binary(walker, &node->binary);
-            break;
-
-        case AST_STR:
-            walker->walk_str(walker, &node->str);
-    }
-}
