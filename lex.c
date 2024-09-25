@@ -17,6 +17,11 @@ keyword keyword_table[] = {
     TABLE_ENTRY(TOK_LET, "let"),
     TABLE_ENTRY(TOK_FALSE, "false"),
     TABLE_ENTRY(TOK_TRUE, "true"),
+    TABLE_ENTRY(TOK_IF, "if"),
+    TABLE_ENTRY(TOK_ELSE, "else"),
+    TABLE_ENTRY(TOK_WHILE, "while"),
+    TABLE_ENTRY(TOK_FOR, "for"),
+    TABLE_ENTRY(TOK_FN, "fn"),
 };
 
 const size_t keyword_table_len =

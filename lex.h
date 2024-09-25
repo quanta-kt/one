@@ -21,6 +21,13 @@ typedef enum {
     TOK_LET,
     TOK_ASSIGN,
 
+    TOK_IF,
+    TOK_ELSE,
+    TOK_WHILE,
+    TOK_FOR,
+
+    TOK_FN,
+
     TOK_PAREN_OPEN,
     TOK_PAREN_CLOSE,
 
