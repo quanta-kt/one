@@ -4,6 +4,26 @@
 #include <stdbool.h>
 #include <string.h>
 
+typedef struct {
+    token_type tt;
+    char keyword[8];
+    size_t keyword_len;
+} keyword;
+
+#define TABLE_ENTRY(_tt, _kw) \
+    {.keyword = _kw, .keyword_len = sizeof(_kw) - 1, .tt = _tt}
+
+keyword keyword_table[] = {
+    TABLE_ENTRY(TOK_LET, "let"),
+    TABLE_ENTRY(TOK_FALSE, "false"),
+    TABLE_ENTRY(TOK_TRUE, "true"),
+};
+
+const size_t keyword_table_len =
+    sizeof(keyword_table) / sizeof(keyword_table[0]);
+
+#undef TABLE_ENTRY
+
 static token make_token(token_type tt, char* span, size_t size) {
     return (token){.type = tt, .span = span, .span_size = size};
 }
@@ -50,19 +70,22 @@ static token token_iden(lexer_t* lex) {
 
     while (is_alpha_num(*end)) end++;
     lex->curr = end;
+    size_t len = end - start;
 
-    token_type tt;
-    if (memcmp(start, "true", 4) == 0) {
-        tt = TOK_TRUE;
-    } else if (memcmp(start, "false", 5) == 0) {
-        tt = TOK_FALSE;
-    } else if (memcmp(start, "let", 3) == 0) {
-        tt = TOK_LET;
-    } else {
-        tt = TOK_IDEN;
+    token_type tt = TOK_IDEN;
+
+    for (size_t i = 0; i < keyword_table_len; i++) {
+        keyword kw = keyword_table[i];
+
+        if (kw.keyword_len != len) continue;
+
+        if (memcmp(start, kw.keyword, kw.keyword_len) == 0) {
+            tt = kw.tt;
+            break;
+        }
     }
 
-    return make_token(tt, start, end - start);
+    return make_token(tt, start, len);
 }
 
 static token_result token_str(lexer_t* lex) {
