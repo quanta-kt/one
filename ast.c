@@ -88,10 +88,28 @@ ast_stmt_node* make_ast_expr_stmt(allocator_t* allocator, ast_expr_node* expr) {
     return node;
 }
 
+ast_stmt_node* make_ast_var_decl(
+    allocator_t* allocator, token name, ast_expr_node* value
+) {
+    ast_stmt_node* node = ALLOC(allocator, ast_stmt_node);
+    *node = stmt_node_defaults;
+
+    node->type = AST_VAR_DECL;
+    node->var_decl.name = name;
+    node->var_decl.value = value;
+
+    return node;
+}
+
 static void _free_ast_stmt(allocator_t* allocator, ast_stmt_node* node) {
     switch (node->type) {
         case AST_EXPR_STMT: {
             free_ast_expr(allocator, node->expr_stmt.expr);
+            break;
+        }
+
+        case AST_VAR_DECL: {
+            free_ast_expr(allocator, node->var_decl.value);
             break;
         }
     }

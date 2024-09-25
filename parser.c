@@ -17,6 +17,8 @@ typedef struct {
     ast_stmt_node* ast_tail;
 } parser_t;
 
+static ast_stmt_node* var_decl(parser_t* parser);
+static ast_stmt_node* expr_stmt(parser_t* parser);
 static ast_expr_node* expr(parser_t* parser);
 static ast_expr_node* term(parser_t* parser);
 static ast_expr_node* factor(parser_t* parser);
@@ -85,14 +87,43 @@ static token advance(parser_t* parser) {
 }
 
 static ast_stmt_node* stmt(parser_t* parser) {
-    ast_expr_node* expr_node = expr(parser);
-    ast_stmt_node* node = make_ast_expr_stmt(parser->allocator, expr_node);
+    ast_stmt_node* node = NULL;
+
+    switch (parser->curr.type) {
+        case TOK_LET:
+            node = var_decl(parser);
+            break;
+
+        default:
+            node = expr_stmt(parser);
+    }
 
     if (parser->curr.type != TOK_SEMI) {
         __die("expected ';' after statement");
     }
 
     advance(parser);
+
+    return node;
+}
+
+static ast_stmt_node* var_decl(parser_t* parser) {
+    ast_expr_node* value = NULL;
+
+    token name = advance(parser);
+    token next = advance(parser);
+
+    if (next.type == TOK_ASSIGN) {
+        advance(parser);
+        value = expr(parser);
+    }
+
+    return make_ast_var_decl(parser->allocator, name, value);
+}
+
+static ast_stmt_node* expr_stmt(parser_t* parser) {
+    ast_expr_node* expr_node = expr(parser);
+    ast_stmt_node* node = make_ast_expr_stmt(parser->allocator, expr_node);
 
     return node;
 }

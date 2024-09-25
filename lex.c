@@ -56,6 +56,8 @@ static token token_iden(lexer_t* lex) {
         tt = TOK_TRUE;
     } else if (memcmp(start, "false", 5) == 0) {
         tt = TOK_FALSE;
+    } else if (memcmp(start, "let", 3) == 0) {
+        tt = TOK_LET;
     } else {
         tt = TOK_IDEN;
     }
@@ -130,6 +132,8 @@ token_result lex_advance(lexer_t* lex) {
             return SINGLE(TOK_PAREN_CLOSE);
         case ';':
             return SINGLE(TOK_SEMI);
+        case '=':
+            return SINGLE(TOK_ASSIGN);
         case '"':
             return token_str(lex);
     }

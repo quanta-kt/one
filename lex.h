@@ -18,6 +18,9 @@ typedef enum {
     TOK_DIV,
     TOK_MUL,
 
+    TOK_LET,
+    TOK_ASSIGN,
+
     TOK_PAREN_OPEN,
     TOK_PAREN_CLOSE,
 

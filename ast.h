@@ -103,6 +103,7 @@ void free_ast_expr(allocator_t* allocator, ast_expr_node* node);
 
 typedef enum {
     AST_EXPR_STMT,
+    AST_VAR_DECL,
 } ast_stmt_node_type;
 
 struct _ast_stmt_node;
@@ -111,9 +112,15 @@ typedef struct {
     ast_expr_node* expr;
 } ast_node_expr_stmt;
 
+typedef struct {
+    token name;
+    ast_expr_node* value;
+} ast_node_var_decl;
+
 typedef struct _ast_stmt_node {
     union {
         ast_node_expr_stmt expr_stmt;
+        ast_node_var_decl var_decl;
     };
     ast_stmt_node_type type;
 
@@ -121,6 +128,9 @@ typedef struct _ast_stmt_node {
 } ast_stmt_node;
 
 ast_stmt_node* make_ast_expr_stmt(allocator_t* allocator, ast_expr_node* expr);
+ast_stmt_node* make_ast_var_decl(
+    allocator_t* allocator, token name, ast_expr_node* value
+);
 
 void free_ast_stmt(allocator_t* allocator, ast_stmt_node* node);
 
@@ -128,12 +138,16 @@ void free_ast_stmt(allocator_t* allocator, ast_stmt_node* node);
     struct _##name;                                                          \
     typedef struct _##name {                                                 \
         return_type (*walk_expr_stmt)(struct _##name*, ast_node_expr_stmt*); \
+        return_type (*walk_var_decl)(struct _##name*, ast_node_var_decl*);   \
     } name;                                                                  \
                                                                              \
     return_type name##_walk(name* walker, ast_stmt_node* node) {             \
         switch (node->type) {                                                \
             case AST_EXPR_STMT: {                                            \
                 return walker->walk_expr_stmt(walker, &node->expr_stmt);     \
+            }                                                                \
+            case AST_VAR_DECL: {                                             \
+                return walker->walk_var_decl(walker, &node->var_decl);       \
             }                                                                \
         }                                                                    \
     }
