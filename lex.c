@@ -174,12 +174,25 @@ token_result lex_advance(lexer_t* lex) {
             return SINGLE(TOK_COLON);
         case ';':
             return SINGLE(TOK_SEMI);
-        case '=':
-            return SINGLE(TOK_ASSIGN);
         case '>':
             return SINGLE(TOK_GT);
         case '<':
             return SINGLE(TOK_LT);
+
+        case '=': {
+            if (lex->curr[1] == '=') {
+                lex->curr += 2;
+                return token_ok(make_token(TOK_EQ, lex->curr, 2));
+            }
+            return SINGLE(TOK_ASSIGN);
+        }
+        case '!': {
+            if (lex->curr[1] == '=') {
+                lex->curr += 2;
+                return token_ok(make_token(TOK_NEQ, lex->curr, 2));
+            }
+            return SINGLE(TOK_BANG);
+        }
 
         case '|': {
             if (lex->curr[1] == '|') {

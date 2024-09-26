@@ -25,6 +25,10 @@ typedef enum {
     TOK_OR,
     TOK_AND,
 
+    TOK_BANG,  // !
+    TOK_EQ,    // ==
+    TOK_NEQ,   // !=
+
     TOK_LET,
     TOK_MUT,
     TOK_ASSIGN,
