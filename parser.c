@@ -88,10 +88,14 @@ static token advance(parser_t* parser) {
     return res.t;
 }
 
+static inline token peek(parser_t* parser) {
+    return parser->curr;
+}
+
 static ast_stmt_node* stmt(parser_t* parser) {
     ast_stmt_node* node = NULL;
 
-    switch (parser->curr.type) {
+    switch (peek(parser).type) {
         case TOK_LET:
             node = var_decl(parser);
             break;
@@ -139,7 +143,7 @@ static ast_stmt_node* var_decl(parser_t* parser) {
         value = expr(parser);
     }
 
-    if (parser->curr.type != TOK_SEMI) {
+    if (peek(parser).type != TOK_SEMI) {
         __die("expected ';' after variable declaration");
     }
 
@@ -154,7 +158,7 @@ static ast_stmt_node* block(parser_t* parser) {
     ast_stmt_node* body = NULL;
     ast_stmt_node* tail = NULL;
 
-    while (parser->curr.type != TOK_BRACE_CLOSE && parser->curr.type != TOK_EOF
+    while (peek(parser).type != TOK_BRACE_CLOSE && peek(parser).type != TOK_EOF
     ) {
         ast_stmt_node* next = stmt(parser);
 
@@ -168,8 +172,7 @@ static ast_stmt_node* block(parser_t* parser) {
         tail = next;
     }
 
-    token end = parser->curr;
-    if (end.type != TOK_BRACE_CLOSE) {
+    if (peek(parser).type != TOK_BRACE_CLOSE) {
         __die("unclosed block");
     }
 
@@ -182,7 +185,7 @@ static ast_stmt_node* if_else(parser_t* parser) {
     advance(parser);  // if
     ast_expr_node* condition = expr(parser);
 
-    token brace_open = parser->curr;
+    token brace_open = peek(parser);
     if (brace_open.type != TOK_BRACE_OPEN) {
         __die("expected '{' after if");
     }
@@ -191,12 +194,12 @@ static ast_stmt_node* if_else(parser_t* parser) {
 
     ast_stmt_node* else_body = NULL;
 
-    if (parser->curr.type == TOK_ELSE) {
+    if (peek(parser).type == TOK_ELSE) {
         advance(parser);
 
-        if (parser->curr.type == TOK_IF) {
+        if (peek(parser).type == TOK_IF) {
             else_body = if_else(parser);
-        } else if (parser->curr.type == TOK_BRACE_OPEN) {
+        } else if (peek(parser).type == TOK_BRACE_OPEN) {
             else_body = block(parser);
         } else {
             __die("expected 'if' or '{' after else");
@@ -210,7 +213,7 @@ static ast_stmt_node* expr_stmt(parser_t* parser) {
     ast_expr_node* expr_node = expr(parser);
     ast_stmt_node* node = make_ast_expr_stmt(parser->allocator, expr_node);
 
-    if (parser->curr.type != TOK_SEMI) {
+    if (peek(parser).type != TOK_SEMI) {
         __die("expected ';' after statement");
     }
 
@@ -223,8 +226,8 @@ static ast_expr_node* expr(parser_t* parser) {
     ast_expr_node* left = term(parser);
 
     while (!lex_eof(&parser->lexer) &&
-           (parser->curr.type == TOK_PLUS || parser->curr.type == TOK_MINUS)) {
-        token op = parser->curr;
+           (peek(parser).type == TOK_PLUS || peek(parser).type == TOK_MINUS)) {
+        token op = peek(parser);
         advance(parser);
 
         ast_expr_node* right = term(parser);
@@ -238,8 +241,8 @@ static ast_expr_node* term(parser_t* parser) {
     ast_expr_node* left = factor(parser);
 
     while (!lex_eof(&parser->lexer) &&
-           (parser->curr.type == TOK_MUL || parser->curr.type == TOK_DIV)) {
-        token op = parser->curr;
+           (peek(parser).type == TOK_MUL || peek(parser).type == TOK_DIV)) {
+        token op = peek(parser);
         advance(parser);
 
         ast_expr_node* right = factor(parser);
@@ -250,7 +253,7 @@ static ast_expr_node* term(parser_t* parser) {
 }
 
 static ast_expr_node* factor(parser_t* parser) {
-    token_type tt = parser->curr.type;
+    token_type tt = peek(parser).type;
 
     switch (tt) {
         case TOK_NUM:
@@ -275,13 +278,13 @@ static ast_expr_node* factor(parser_t* parser) {
 }
 
 static ast_expr_node* number(parser_t* parser) {
-    token tok = parser->curr;
+    token tok = peek(parser);
     advance(parser);
     return make_ast_num(parser->allocator, strtold(tok.span, NULL));
 }
 
 static ast_expr_node* iden(parser_t* parser) {
-    token tok = parser->curr;
+    token tok = peek(parser);
     advance(parser);
     return make_ast_identifier(parser->allocator, tok.span, tok.span_size);
 }
@@ -290,7 +293,7 @@ static ast_expr_node* group(parser_t* parser) {
     advance(parser);  // (
 
     ast_expr_node* result = expr(parser);
-    token closing = parser->curr;
+    token closing = peek(parser);
 
     if (closing.type != TOK_PAREN_CLOSE) {
         __die("expected ')'");
@@ -307,7 +310,7 @@ static ast_expr_node* str(parser_t* parser) {
         str[len++] = replacement;    \
         break;
 
-    token tok = parser->curr;
+    token tok = peek(parser);
     size_t size = tok.span_size - 1;
 
     char* str = ALLOC_ARRAY(parser->allocator, char, size);
