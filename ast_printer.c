@@ -17,27 +17,35 @@ static void walk_iden(ast_expr_printer_t* _, ast_node_identifier* node) {
 }
 
 static void walk_binary(ast_expr_printer_t* self, ast_node_binary* node) {
-    char op = '?';
+    char* op = "?";
 
     switch (node->op) {
         case TOK_DIV:
-            op = '/';
+            op = "/";
             break;
 
         case TOK_MUL:
-            op = '*';
+            op = "*";
             break;
 
         case TOK_PLUS:
-            op = '+';
+            op = "+";
             break;
 
         case TOK_MINUS:
-            op = '-';
+            op = "-";
+            break;
+
+        case TOK_OR:
+            op = "||";
+            break;
+
+        case TOK_AND:
+            op = "&&";
             break;
     }
 
-    printf("(%c ", op);
+    printf("(%s ", op);
     ast_expr_printer_t_walk(self, node->left);
     printf(" ");
     ast_expr_printer_t_walk(self, node->right);

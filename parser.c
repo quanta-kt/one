@@ -23,6 +23,8 @@ static ast_stmt_node* if_else(parser_t* parser);
 static ast_stmt_node* expr_stmt(parser_t* parser);
 
 static ast_expr_node* expr(parser_t* parser);
+static ast_expr_node* or_op(parser_t* parser);
+static ast_expr_node* and_op(parser_t* parser);
 static ast_expr_node* term(parser_t* parser);
 static ast_expr_node* factor(parser_t* parser);
 static ast_expr_node* primary(parser_t* parser);
@@ -90,9 +92,7 @@ static token advance(parser_t* parser) {
     return res.t;
 }
 
-static inline token peek(parser_t* parser) {
-    return parser->curr;
-}
+static inline token peek(parser_t* parser) { return parser->curr; }
 
 static ast_stmt_node* stmt(parser_t* parser) {
     ast_stmt_node* node = NULL;
@@ -224,8 +224,32 @@ static ast_stmt_node* expr_stmt(parser_t* parser) {
     return node;
 }
 
-static ast_expr_node* expr(parser_t* parser) {
-    return term(parser);
+static ast_expr_node* expr(parser_t* parser) { return or_op(parser); }
+
+static ast_expr_node* or_op(parser_t* parser) {
+    ast_expr_node* left = and_op(parser);
+
+    while (!lex_eof(&parser->lexer) && peek(parser).type == TOK_OR) {
+        advance(parser);
+
+        ast_expr_node* right = and_op(parser);
+        left = make_ast_binary(parser->allocator, TOK_OR, left, right);
+    }
+
+    return left;
+}
+
+static ast_expr_node* and_op(parser_t* parser) {
+    ast_expr_node* left = term(parser);
+
+    while (!lex_eof(&parser->lexer) && peek(parser).type == TOK_AND) {
+        advance(parser);
+
+        ast_expr_node* right = term(parser);
+        left = make_ast_binary(parser->allocator, TOK_AND, left, right);
+    }
+
+    return left;
 }
 
 static ast_expr_node* term(parser_t* parser) {
