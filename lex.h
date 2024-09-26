@@ -29,6 +29,7 @@ typedef enum {
 
     TOK_FN,
     TOK_STRUCT,
+    TOK_IMPL,
 
     TOK_RETURN,
 
