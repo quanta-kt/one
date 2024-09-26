@@ -17,6 +17,7 @@ typedef enum {
     TOK_MINUS,
     TOK_DIV,
     TOK_MUL,
+    TOK_PERC,
     TOK_GT,
     TOK_LT,
     TOK_PIPE,

@@ -160,6 +160,8 @@ token_result lex_advance(lexer_t* lex) {
             return SINGLE(TOK_DIV);
         case '*':
             return SINGLE(TOK_MUL);
+        case '%':
+            return SINGLE(TOK_PERC);
         case '(':
             return SINGLE(TOK_PAREN_OPEN);
         case ')':
