@@ -112,10 +112,27 @@ static ast_stmt_node* stmt(parser_t* parser) {
 }
 
 static ast_stmt_node* var_decl(parser_t* parser) {
+    token name;
+    bool mut = false;
     ast_expr_node* value = NULL;
 
-    token name = advance(parser);
     token next = advance(parser);
+
+    if (next.type == TOK_MUT) {
+        next = advance(parser);
+        mut = true;
+    }
+
+    if (next.type != TOK_IDEN) {
+        if (mut) {
+            __die("expected identifier after 'let mut'");
+        }
+        __die("expected identifier after 'let'");
+    }
+
+    name = next;
+
+    next = advance(parser);
 
     if (next.type == TOK_ASSIGN) {
         advance(parser);
@@ -128,7 +145,7 @@ static ast_stmt_node* var_decl(parser_t* parser) {
 
     advance(parser);
 
-    return make_ast_var_decl(parser->allocator, name, value);
+    return make_ast_var_decl(parser->allocator, name, value, mut);
 }
 
 static ast_stmt_node* block(parser_t* parser) {

@@ -15,6 +15,7 @@ typedef struct {
 
 keyword keyword_table[] = {
     TABLE_ENTRY(TOK_LET, "let"),
+    TABLE_ENTRY(TOK_MUT, "mut"),
     TABLE_ENTRY(TOK_FALSE, "false"),
     TABLE_ENTRY(TOK_TRUE, "true"),
     TABLE_ENTRY(TOK_IF, "if"),

@@ -70,7 +70,9 @@ static void walk_expr_stmt(ast_stmt_printer_t* self, ast_node_expr_stmt* node) {
 }
 
 static void walk_var_decl(ast_stmt_printer_t* self, ast_node_var_decl* node) {
-    printf("(let %.*s ", (int)node->name.span_size, node->name.span);
+    char* op = node->mut ? "let mut" : "let";
+
+    printf("(%s %.*s ", op, (int)node->name.span_size, node->name.span);
     if (node->value == NULL) {
         printf("NULL");
     } else {

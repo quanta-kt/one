@@ -19,6 +19,7 @@ typedef enum {
     TOK_MUL,
 
     TOK_LET,
+    TOK_MUT,
     TOK_ASSIGN,
 
     TOK_IF,
