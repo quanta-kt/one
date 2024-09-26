@@ -21,6 +21,8 @@ typedef enum {
     TOK_LT,
     TOK_PIPE,
     TOK_AMP,
+    TOK_OR,
+    TOK_AND,
 
     TOK_LET,
     TOK_MUT,

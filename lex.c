@@ -178,10 +178,24 @@ token_result lex_advance(lexer_t* lex) {
             return SINGLE(TOK_GT);
         case '<':
             return SINGLE(TOK_LT);
-        case '|':
+
+        case '|': {
+            if (lex->curr[1] == '|') {
+                lex->curr += 2;
+                return token_ok(make_token(TOK_OR, lex->curr, 2));
+            }
+
             return SINGLE(TOK_PIPE);
-        case '&':
+        }
+        case '&': {
+            if (lex->curr[1] == '&') {
+                lex->curr += 2;
+                return token_ok(make_token(TOK_AND, lex->curr, 2));
+            }
+
             return SINGLE(TOK_AMP);
+        }
+
         case '"':
             return token_str(lex);
     }
