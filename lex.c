@@ -174,6 +174,10 @@ token_result lex_advance(lexer_t* lex) {
             return SINGLE(TOK_SEMI);
         case '=':
             return SINGLE(TOK_ASSIGN);
+        case '>':
+            return SINGLE(TOK_GT);
+        case '<':
+            return SINGLE(TOK_LT);
         case '"':
             return token_str(lex);
     }
