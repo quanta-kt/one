@@ -32,6 +32,9 @@ typedef enum {
 
     TOK_RETURN,
 
+    TOK_ASYNC,
+    TOK_AWAIT,
+
     TOK_PAREN_OPEN,
     TOK_PAREN_CLOSE,
 
