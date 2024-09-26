@@ -21,9 +21,11 @@ static ast_stmt_node* var_decl(parser_t* parser);
 static ast_stmt_node* block(parser_t* parser);
 static ast_stmt_node* if_else(parser_t* parser);
 static ast_stmt_node* expr_stmt(parser_t* parser);
+
 static ast_expr_node* expr(parser_t* parser);
 static ast_expr_node* term(parser_t* parser);
 static ast_expr_node* factor(parser_t* parser);
+static ast_expr_node* primary(parser_t* parser);
 static ast_expr_node* number(parser_t* parser);
 static ast_expr_node* iden(parser_t* parser);
 static ast_expr_node* group(parser_t* parser);
@@ -223,7 +225,11 @@ static ast_stmt_node* expr_stmt(parser_t* parser) {
 }
 
 static ast_expr_node* expr(parser_t* parser) {
-    ast_expr_node* left = term(parser);
+    return term(parser);
+}
+
+static ast_expr_node* term(parser_t* parser) {
+    ast_expr_node* left = factor(parser);
 
     while (!lex_eof(&parser->lexer) &&
            (peek(parser).type == TOK_PLUS || peek(parser).type == TOK_MINUS)) {
@@ -237,8 +243,8 @@ static ast_expr_node* expr(parser_t* parser) {
     return left;
 }
 
-static ast_expr_node* term(parser_t* parser) {
-    ast_expr_node* left = factor(parser);
+static ast_expr_node* factor(parser_t* parser) {
+    ast_expr_node* left = primary(parser);
 
     while (!lex_eof(&parser->lexer) &&
            (peek(parser).type == TOK_MUL || peek(parser).type == TOK_DIV)) {
@@ -252,7 +258,7 @@ static ast_expr_node* term(parser_t* parser) {
     return left;
 }
 
-static ast_expr_node* factor(parser_t* parser) {
+static ast_expr_node* primary(parser_t* parser) {
     token_type tt = peek(parser).type;
 
     switch (tt) {
