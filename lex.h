@@ -28,6 +28,7 @@ typedef enum {
     TOK_FOR,
 
     TOK_FN,
+    TOK_STRUCT,
 
     TOK_PAREN_OPEN,
     TOK_PAREN_CLOSE,
