@@ -288,7 +288,7 @@ static ast_expr_node* term(parser_t* parser) {
         token op = peek(parser);
         advance(parser);
 
-        ast_expr_node* right = term(parser);
+        ast_expr_node* right = factor(parser);
         left = make_ast_binary(parser->allocator, op.type, left, right);
     }
 
@@ -303,7 +303,7 @@ static ast_expr_node* factor(parser_t* parser) {
         token op = peek(parser);
         advance(parser);
 
-        ast_expr_node* right = factor(parser);
+        ast_expr_node* right = primary(parser);
         left = make_ast_binary(parser->allocator, op.type, left, right);
     }
 
