@@ -36,6 +36,14 @@ static void walk_binary(ast_expr_printer_t* self, ast_node_binary* node) {
             op = "-";
             break;
 
+        case TOK_PIPE:
+            op = "|";
+            break;
+
+        case TOK_AMP:
+            op = "&";
+            break;
+
         case TOK_OR:
             op = "||";
             break;
