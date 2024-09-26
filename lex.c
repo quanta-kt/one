@@ -24,6 +24,7 @@ keyword keyword_table[] = {
     TABLE_ENTRY(TOK_FOR, "for"),
     TABLE_ENTRY(TOK_FN, "fn"),
     TABLE_ENTRY(TOK_STRUCT, "struct"),
+    TABLE_ENTRY(TOK_RETURN, "return"),
 };
 
 const size_t keyword_table_len =

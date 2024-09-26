@@ -30,6 +30,8 @@ typedef enum {
     TOK_FN,
     TOK_STRUCT,
 
+    TOK_RETURN,
+
     TOK_PAREN_OPEN,
     TOK_PAREN_CLOSE,
 
