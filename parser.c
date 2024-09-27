@@ -27,6 +27,7 @@ static ast_expr_node* or_op(parser_t* parser);
 static ast_expr_node* and_op(parser_t* parser);
 static ast_expr_node* bitwise_or(parser_t* parser);
 static ast_expr_node* bitwise_and(parser_t* parser);
+static ast_expr_node* equality(parser_t* parser);
 static ast_expr_node* term(parser_t* parser);
 static ast_expr_node* factor(parser_t* parser);
 static ast_expr_node* primary(parser_t* parser);
@@ -268,13 +269,28 @@ static ast_expr_node* bitwise_or(parser_t* parser) {
 }
 
 static ast_expr_node* bitwise_and(parser_t* parser) {
-    ast_expr_node* left = term(parser);
+    ast_expr_node* left = equality(parser);
 
     while (!lex_eof(&parser->lexer) && peek(parser).type == TOK_AMP) {
         advance(parser);
 
-        ast_expr_node* right = term(parser);
+        ast_expr_node* right = equality(parser);
         left = make_ast_binary(parser->allocator, TOK_AMP, left, right);
+    }
+
+    return left;
+}
+
+static ast_expr_node* equality(parser_t* parser) {
+    ast_expr_node* left = term(parser);
+
+    while (!lex_eof(&parser->lexer) &&
+           (peek(parser).type == TOK_EQ || peek(parser).type == TOK_NEQ)) {
+        token op = peek(parser);
+        advance(parser);
+
+        ast_expr_node* right = term(parser);
+        left = make_ast_binary(parser->allocator, op.type, left, right);
     }
 
     return left;

@@ -51,6 +51,14 @@ static void walk_binary(ast_expr_printer_t* self, ast_node_binary* node) {
         case TOK_AND:
             op = "&&";
             break;
+
+        case TOK_EQ:
+            op = "==";
+            break;
+
+        case TOK_NEQ:
+            op = "!=";
+            break;
     }
 
     printf("(%s ", op);
