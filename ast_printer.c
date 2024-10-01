@@ -16,10 +16,10 @@ static void walk_iden(ast_expr_printer_t* _, ast_node_identifier* node) {
     printf("%.*s", (int)node->len, node->start);
 }
 
-static void walk_binary(ast_expr_printer_t* self, ast_node_binary* node) {
+static char* op2str(token_type tt) {
     char* op = "?";
 
-    switch (node->op) {
+    switch (tt) {
         case TOK_DIV:
             op = "/";
             break;
@@ -65,11 +65,24 @@ static void walk_binary(ast_expr_printer_t* self, ast_node_binary* node) {
             break;
     }
 
+    return op;
+}
+
+static void walk_binary(ast_expr_printer_t* self, ast_node_binary* node) {
+    char* op = op2str(node->op);
+
     printf("(%s ", op);
     ast_expr_printer_t_walk(self, node->left);
     printf(" ");
     ast_expr_printer_t_walk(self, node->right);
     printf(")");
+}
+
+static void walk_unary(ast_expr_printer_t* self, ast_node_unary* node) {
+    char* op = op2str(node->op);
+    printf("(%s ", op);
+    ast_expr_printer_t_walk(self, node->expr);
+    putchar(')');
 }
 
 static void walk_str(ast_expr_printer_t* _, ast_node_str* node) {
@@ -82,6 +95,7 @@ static void walk_bool(ast_expr_printer_t* _, ast_node_bool* node) {
 
 ast_expr_printer_t expr_printer = (ast_expr_printer_t){
     .walk_binary = walk_binary,
+    .walk_unary = walk_unary,
     .walk_num = walk_num,
     .walk_iden = walk_iden,
     .walk_str = walk_str,

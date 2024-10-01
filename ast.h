@@ -10,6 +10,7 @@ typedef enum {
     AST_STR,
     AST_IDEN,
     AST_BINARY,
+    AST_UNARY,
 } ast_expr_node_type;
 
 struct _ast_expr_node;
@@ -43,12 +44,18 @@ typedef struct {
     struct _ast_expr_node* right;
 } ast_node_binary;
 
+typedef struct {
+    token_type op;
+    struct _ast_expr_node* expr;
+} ast_node_unary;
+
 typedef struct _ast_expr_node {
     union {
         ast_node_num num;
         ast_node_bool boolean;
         ast_node_str str;
         ast_node_binary binary;
+        ast_node_unary unary;
         ast_node_identifier identifier;
     };
 
@@ -69,6 +76,9 @@ ast_expr_node* make_ast_binary(
     ast_expr_node* left,
     ast_expr_node* right
 );
+ast_expr_node* make_ast_unary(
+    allocator_t* allocator, token_type op, ast_expr_node* expr
+);
 
 void free_ast_expr(allocator_t* allocator, ast_expr_node* node);
 
@@ -76,6 +86,7 @@ void free_ast_expr(allocator_t* allocator, ast_expr_node* node);
     struct _##name;                                                      \
     typedef struct _##name {                                             \
         return_type (*walk_binary)(struct _##name*, ast_node_binary*);   \
+        return_type (*walk_unary)(struct _##name*, ast_node_unary*);     \
         return_type (*walk_num)(struct _##name*, ast_node_num*);         \
         return_type (*walk_iden)(struct _##name*, ast_node_identifier*); \
         return_type (*walk_str)(struct _##name*, ast_node_str*);         \
@@ -95,6 +106,9 @@ void free_ast_expr(allocator_t* allocator, ast_expr_node* node);
                                                                          \
             case AST_BINARY:                                             \
                 return walker->walk_binary(walker, &node->binary);       \
+                                                                         \
+            case AST_UNARY:                                              \
+                return walker->walk_unary(walker, &node->unary);         \
                                                                          \
             case AST_STR:                                                \
                 return walker->walk_str(walker, &node->str);             \

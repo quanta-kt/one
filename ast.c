@@ -58,6 +58,17 @@ ast_expr_node* make_ast_binary(
     return node;
 }
 
+ast_expr_node* make_ast_unary(
+    allocator_t* allocator, token_type op, ast_expr_node* expr
+) {
+    ast_expr_node* node = ALLOC(allocator, ast_expr_node);
+    node->type = AST_UNARY;
+    node->unary.op = op;
+    node->unary.expr = expr;
+
+    return node;
+}
+
 void free_ast_expr(allocator_t* allocator, ast_expr_node* node) {
     switch (node->type) {
         case AST_STR:
@@ -67,6 +78,11 @@ void free_ast_expr(allocator_t* allocator, ast_expr_node* node) {
         case AST_BINARY: {
             free_ast_expr(allocator, node->binary.left);
             free_ast_expr(allocator, node->binary.right);
+            break;
+        }
+
+        case AST_UNARY: {
+            free_ast_expr(allocator, node->unary.expr);
             break;
         }
     }

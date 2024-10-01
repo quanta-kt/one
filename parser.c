@@ -30,6 +30,7 @@ static ast_expr_node* bitwise_and(parser_t* parser);
 static ast_expr_node* equality(parser_t* parser);
 static ast_expr_node* term(parser_t* parser);
 static ast_expr_node* factor(parser_t* parser);
+static ast_expr_node* unary(parser_t* parser);
 static ast_expr_node* primary(parser_t* parser);
 static ast_expr_node* number(parser_t* parser);
 static ast_expr_node* iden(parser_t* parser);
@@ -312,7 +313,7 @@ static ast_expr_node* term(parser_t* parser) {
 }
 
 static ast_expr_node* factor(parser_t* parser) {
-    ast_expr_node* left = primary(parser);
+    ast_expr_node* left = unary(parser);
 
     while (!lex_eof(&parser->lexer) &&
            (peek(parser).type == TOK_MUL || peek(parser).type == TOK_DIV ||
@@ -320,11 +321,24 @@ static ast_expr_node* factor(parser_t* parser) {
         token op = peek(parser);
         advance(parser);
 
-        ast_expr_node* right = primary(parser);
+        ast_expr_node* right = unary(parser);
         left = make_ast_binary(parser->allocator, op.type, left, right);
     }
 
     return left;
+}
+
+static ast_expr_node* unary(parser_t* parser) {
+    token_type tt = peek(parser).type;
+
+    if (tt == TOK_MINUS || tt == TOK_PLUS) {
+        advance(parser);
+
+        ast_expr_node* expr = unary(parser);
+        return make_ast_unary(parser->allocator, tt, expr);
+    }
+
+    return primary(parser);
 }
 
 static ast_expr_node* primary(parser_t* parser) {
