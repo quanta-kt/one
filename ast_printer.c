@@ -90,7 +90,6 @@ static void print_expr(ast_expr_node* node) {
 
 static void walk_expr_stmt(ast_stmt_printer_t* self, ast_node_expr_stmt* node) {
     print_expr(node->expr);
-    printf(";");
 }
 
 static void walk_var_decl(ast_stmt_printer_t* self, ast_node_var_decl* node) {
@@ -102,7 +101,7 @@ static void walk_var_decl(ast_stmt_printer_t* self, ast_node_var_decl* node) {
     } else {
         print_expr(node->value);
     }
-    printf(");");
+    printf(")");
 }
 
 static void walk_block(ast_stmt_printer_t* self, ast_node_block* node) {
@@ -115,7 +114,7 @@ static void walk_block(ast_stmt_printer_t* self, ast_node_block* node) {
         curr = curr->next;
     }
 
-    printf(");");
+    printf(")");
 }
 
 static void walk_if_else(ast_stmt_printer_t* self, ast_node_if_else* node) {
