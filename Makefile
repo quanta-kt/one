@@ -39,6 +39,7 @@ TEST_DIR = t
 PYTHON = python3
 TEST_FILES += $(TEST_DIR)/test_expr.py
 TEST_FILES += $(TEST_DIR)/test_block.py
+TEST_FILES += $(TEST_DIR)/test_if.py
 
 test: $(OUTPUT)
 	$(PYTHON) -m pytest $(TEST_FILES)
