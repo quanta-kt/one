@@ -124,6 +124,8 @@ ast_stmt_node* make_ast_block(allocator_t* allocator, ast_stmt_node* body) {
 
     node->type = AST_BLOCK;
     node->block.body = body;
+
+    return node;
 }
 
 ast_stmt_node* make_ast_if_else(
