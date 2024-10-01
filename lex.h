@@ -24,6 +24,7 @@ typedef enum {
     TOK_AMP,
     TOK_OR,
     TOK_AND,
+    TOK_CARET,
 
     TOK_BANG,  // !
     TOK_EQ,    // ==

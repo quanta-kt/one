@@ -48,6 +48,10 @@ static char* op2str(token_type tt) {
             op = "&";
             break;
 
+        case TOK_CARET:
+            op = "^";
+            break;
+
         case TOK_OR:
             op = "||";
             break;

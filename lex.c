@@ -178,6 +178,8 @@ token_result lex_advance(lexer_t* lex) {
             return SINGLE(TOK_GT);
         case '<':
             return SINGLE(TOK_LT);
+        case '^':
+            return SINGLE(TOK_CARET);
 
         case '=': {
             if (lex->curr[1] == '=') {
