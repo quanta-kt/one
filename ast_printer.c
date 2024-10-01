@@ -76,8 +76,16 @@ static char* op2str(token_type tt) {
             op = ">";
             break;
 
+        case TOK_GTEQ:
+            op = ">=";
+            break;
+
         case TOK_LT:
             op = "<";
+            break;
+
+        case TOK_LTEQ:
+            op = "<=";
             break;
     }
 

@@ -317,7 +317,8 @@ static ast_expr_node* comparision(parser_t* parser) {
     ast_expr_node* left = term(parser);
 
     while (!lex_eof(&parser->lexer) &&
-           (peek(parser).type == TOK_GT || peek(parser).type == TOK_LT)) {
+           (peek(parser).type == TOK_GT || peek(parser).type == TOK_GTEQ ||
+            peek(parser).type == TOK_LT || peek(parser).type == TOK_LTEQ)) {
         token op = peek(parser);
         advance(parser);
 
