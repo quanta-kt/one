@@ -9,12 +9,14 @@ SRCS += ast_printer.c
 SRCS += lex.c
 SRCS += main.c
 SRCS += parser.c
+SRCS += vec.c
 
 HEADERS += alloc.h
 HEADERS += ast.h
 HEADERS += ast_printer.h
 HEADERS += lex.h
 HEADERS += parser.h
+HEADERS += vec.h
 
 OBJS = $(patsubst %.c, build/%.o, $(SRCS))
 
