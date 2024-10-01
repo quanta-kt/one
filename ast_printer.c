@@ -56,6 +56,10 @@ static char* op2str(token_type tt) {
             op = "&&";
             break;
 
+        case TOK_BANG:
+            op = "!";
+            break;
+
         case TOK_EQ:
             op = "==";
             break;

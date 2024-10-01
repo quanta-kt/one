@@ -331,7 +331,7 @@ static ast_expr_node* factor(parser_t* parser) {
 static ast_expr_node* unary(parser_t* parser) {
     token_type tt = peek(parser).type;
 
-    if (tt == TOK_MINUS || tt == TOK_PLUS) {
+    if (tt == TOK_MINUS || tt == TOK_PLUS || tt == TOK_BANG) {
         advance(parser);
 
         ast_expr_node* expr = unary(parser);
