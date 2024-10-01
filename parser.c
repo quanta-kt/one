@@ -315,7 +315,8 @@ static ast_expr_node* factor(parser_t* parser) {
     ast_expr_node* left = primary(parser);
 
     while (!lex_eof(&parser->lexer) &&
-           (peek(parser).type == TOK_MUL || peek(parser).type == TOK_DIV)) {
+           (peek(parser).type == TOK_MUL || peek(parser).type == TOK_DIV ||
+            peek(parser).type == TOK_PERC)) {
         token op = peek(parser);
         advance(parser);
 
