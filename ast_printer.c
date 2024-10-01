@@ -71,6 +71,14 @@ static char* op2str(token_type tt) {
         case TOK_NEQ:
             op = "!=";
             break;
+
+        case TOK_GT:
+            op = ">";
+            break;
+
+        case TOK_LT:
+            op = "<";
+            break;
     }
 
     return op;
