@@ -21,6 +21,13 @@ typedef struct {
     ((type*)(allocator)->alloc((allocator)->ctx, NULL, 0, sizeof(type) * count))
 #define FREE_ARRAY(allocator, ptr, type, count) \
     ((type*)(allocator)->alloc((allocator)->ctx, ptr, sizeof(type) * count, 0))
+#define RESIZE_ARRAY(allocator, ptr, type, old_count, new_count) \
+    ((type*)(allocator)->alloc(                                  \
+        (allocator)->ctx,                                        \
+        ptr,                                                     \
+        sizeof(type) * old_count,                                \
+        sizeof(type) * new_count                                 \
+    ))
 
 // General purpose allocator, uses realloc from stdlib
 allocator_t* gpa();
