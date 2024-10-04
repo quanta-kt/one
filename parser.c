@@ -120,6 +120,18 @@ static bool match(parser_t* parser, token_type tt) {
     return matches;
 }
 
+/*
+ * Like match, but die if the token is not of the expected type.
+ * Unlike match, this returns the token that was consumed.
+ */
+static token expect(parser_t* parser, token_type tt, char const* message) {
+    if (!match(parser, tt)) {
+        __die(message);
+    }
+
+    return parser->prev;
+}
+
 static ast_stmt_node* stmt(parser_t* parser) {
     ast_stmt_node* node = NULL;
 
@@ -171,9 +183,7 @@ static ast_stmt_node* var_decl(parser_t* parser) {
         value = expr(parser);
     }
 
-    if (!match(parser, TOK_SEMI)) {
-        __die("expected ';' after variable declaration");
-    }
+    expect(parser, TOK_SEMI, "expected ';' after variable declaration");
 
     return make_ast_var_decl(parser->allocator, name, value, mut);
 }
@@ -198,9 +208,7 @@ static ast_stmt_node* block(parser_t* parser) {
         tail = next;
     }
 
-    if (!match(parser, TOK_BRACE_CLOSE)) {  // }
-        __die("unclosed block");
-    }
+    expect(parser, TOK_BRACE_CLOSE, "unclosed block");
 
     return make_ast_block(parser->allocator, body);
 }
@@ -235,9 +243,7 @@ static ast_stmt_node* expr_stmt(parser_t* parser) {
     ast_expr_node* expr_node = expr(parser);
     ast_stmt_node* node = make_ast_expr_stmt(parser->allocator, expr_node);
 
-    if (!match(parser, TOK_SEMI)) {
-        __die("expected ';' after statement");
-    }
+    expect(parser, TOK_SEMI, "expected ';' after statement");
 
     return node;
 }
@@ -443,9 +449,7 @@ static ast_expr_node* group(parser_t* parser) {
 
     ast_expr_node* result = expr(parser);
 
-    if (!match(parser, TOK_PAREN_CLOSE)) {
-        __die("expected ')'");
-    }
+    expect(parser, TOK_PAREN_CLOSE, "expected ')'");
 
     return result;
 }
