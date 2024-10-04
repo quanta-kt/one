@@ -109,6 +109,19 @@ static void walk_unary(ast_expr_printer_t* self, ast_node_unary* node) {
     putchar(')');
 }
 
+static void walk_call(ast_expr_printer_t* self, ast_node_call* node) {
+    printf("(call ");
+    ast_expr_printer_t_walk(self, node->function);
+
+    ast_expr_node** arg;
+    foreach_vec_item(&node->args, ast_expr_node*, arg) {
+        putchar(' ');
+        ast_expr_printer_t_walk(self, *arg);
+    }
+
+    putchar(')');
+}
+
 static void walk_str(ast_expr_printer_t* _, ast_node_str* node) {
     printf("(str '%s')", node->str);
 }
@@ -120,6 +133,7 @@ static void walk_bool(ast_expr_printer_t* _, ast_node_bool* node) {
 ast_expr_printer_t expr_printer = (ast_expr_printer_t){
     .walk_binary = walk_binary,
     .walk_unary = walk_unary,
+    .walk_call = walk_call,
     .walk_num = walk_num,
     .walk_iden = walk_iden,
     .walk_str = walk_str,

@@ -3,6 +3,7 @@
 
 #include "alloc.h"
 #include "lex.h"
+#include "vec.h"
 
 typedef enum {
     AST_NUM,
@@ -11,6 +12,7 @@ typedef enum {
     AST_IDEN,
     AST_BINARY,
     AST_UNARY,
+    AST_CALL,
 } ast_expr_node_type;
 
 struct _ast_expr_node;
@@ -49,6 +51,11 @@ typedef struct {
     struct _ast_expr_node* expr;
 } ast_node_unary;
 
+typedef struct {
+    struct _ast_expr_node* function;
+    vec args;  //  vec of struct _ast_expr_node*
+} ast_node_call;
+
 typedef struct _ast_expr_node {
     union {
         ast_node_num num;
@@ -57,6 +64,7 @@ typedef struct _ast_expr_node {
         ast_node_binary binary;
         ast_node_unary unary;
         ast_node_identifier identifier;
+        ast_node_call call;
     };
 
     ast_expr_node_type type;
@@ -79,6 +87,9 @@ ast_expr_node* make_ast_binary(
 ast_expr_node* make_ast_unary(
     allocator_t* allocator, token_type op, ast_expr_node* expr
 );
+ast_expr_node* make_ast_call(
+    allocator_t* allocator, ast_expr_node* function, vec args
+);
 
 void free_ast_expr(allocator_t* allocator, ast_expr_node* node);
 
@@ -87,6 +98,7 @@ void free_ast_expr(allocator_t* allocator, ast_expr_node* node);
     typedef struct _##name {                                             \
         return_type (*walk_binary)(struct _##name*, ast_node_binary*);   \
         return_type (*walk_unary)(struct _##name*, ast_node_unary*);     \
+        return_type (*walk_call)(struct _##name*, ast_node_call*);       \
         return_type (*walk_num)(struct _##name*, ast_node_num*);         \
         return_type (*walk_iden)(struct _##name*, ast_node_identifier*); \
         return_type (*walk_str)(struct _##name*, ast_node_str*);         \
@@ -109,6 +121,9 @@ void free_ast_expr(allocator_t* allocator, ast_expr_node* node);
                                                                          \
             case AST_UNARY:                                              \
                 return walker->walk_unary(walker, &node->unary);         \
+                                                                         \
+            case AST_CALL:                                               \
+                return walker->walk_call(walker, &node->call);           \
                                                                          \
             case AST_STR:                                                \
                 return walker->walk_str(walker, &node->str);             \
