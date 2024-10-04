@@ -34,6 +34,7 @@ static ast_expr_node* comparision(parser_t* parser);
 static ast_expr_node* term(parser_t* parser);
 static ast_expr_node* factor(parser_t* parser);
 static ast_expr_node* unary(parser_t* parser);
+static ast_expr_node* function_call(parser_t* parser);
 static ast_expr_node* primary(parser_t* parser);
 static ast_expr_node* number(parser_t* parser);
 static ast_expr_node* iden(parser_t* parser);
@@ -370,7 +371,45 @@ static ast_expr_node* unary(parser_t* parser) {
         return make_ast_unary(parser->allocator, tt, expr);
     }
 
-    return primary(parser);
+    return function_call(parser);
+}
+
+static vec arguments(parser_t* parser) {
+    vec args = make_vec(ast_expr_node*, parser->allocator);
+
+    for (;;) {
+        if (peek(parser).type == TOK_PAREN_CLOSE) {
+            break;
+        }
+
+        ast_expr_node* arg = expr(parser);
+        vec_push(&args, ast_expr_node*, &arg);
+
+        if (peek(parser).type == TOK_COMMA) {
+            advance(parser);
+        }
+    }
+
+    if (peek(parser).type != TOK_PAREN_CLOSE) {
+        vec_free(&args);
+        __die("expected ')'");
+    }
+
+    advance(parser);
+
+    return args;
+}
+
+static ast_expr_node* function_call(parser_t* parser) {
+    ast_expr_node* maybe_callee = primary(parser);
+
+    while (peek(parser).type == TOK_PAREN_OPEN) {
+        advance(parser);
+        maybe_callee =
+            make_ast_call(parser->allocator, maybe_callee, arguments(parser));
+    }
+
+    return maybe_callee;
 }
 
 static ast_expr_node* primary(parser_t* parser) {
