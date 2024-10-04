@@ -42,7 +42,7 @@ static ast_expr_node* group(parser_t* parser);
 static ast_expr_node* str(parser_t* parser);
 static ast_expr_node* boolean(parser_t* parser);
 
-static void __die(char* err) {
+static void __die(char const* err) {
     fprintf(stderr, "%s\n", err);
     exit(1);
 }
