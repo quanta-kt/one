@@ -57,7 +57,7 @@ typedef enum {
     TOK_BRACE_CLOSE,
 
     TOK_COLON,
-
+    TOK_COMMA,
     TOK_SEMI,
 
     TOK_EOF,

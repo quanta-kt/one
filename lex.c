@@ -172,6 +172,8 @@ token_result lex_advance(lexer_t* lex) {
             return SINGLE(TOK_BRACE_CLOSE);
         case ':':
             return SINGLE(TOK_COLON);
+        case ',':
+            return SINGLE(TOK_COMMA);
         case ';':
             return SINGLE(TOK_SEMI);
         case '^':
