@@ -174,7 +174,8 @@ static void _free_ast_stmt(allocator_t* allocator, ast_stmt_node* node) {
         }
 
         case AST_VAR_DECL: {
-            free_ast_expr(allocator, node->var_decl.value);
+            if (node->var_decl.value != NULL)
+                free_ast_expr(allocator, node->var_decl.value);
             break;
         }
 
