@@ -156,32 +156,18 @@ static ast_stmt_node* stmt(parser_t* parser) {
 }
 
 static ast_stmt_node* var_decl(parser_t* parser) {
-    token name;
-    bool mut = false;
-    ast_expr_node* value = NULL;
+    advance(parser);  // let
 
-    token next = advance(parser);
+    bool mut = match(parser, TOK_MUT);
 
-    if (next.type == TOK_MUT) {
-        next = advance(parser);
-        mut = true;
-    }
+    token name = name = expect(
+        parser,
+        TOK_IDEN,
+        mut ? "expected identifier after 'let mut'"
+            : "expected identifier after 'let'"
+    );
 
-    if (next.type != TOK_IDEN) {
-        if (mut) {
-            __die("expected identifier after 'let mut'");
-        }
-        __die("expected identifier after 'let'");
-    }
-
-    name = next;
-
-    next = advance(parser);
-
-    if (next.type == TOK_ASSIGN) {
-        advance(parser);
-        value = expr(parser);
-    }
+    ast_expr_node* value = match(parser, TOK_ASSIGN) ? expr(parser) : NULL;
 
     expect(parser, TOK_SEMI, "expected ';' after variable declaration");
 
