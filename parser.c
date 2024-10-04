@@ -102,6 +102,24 @@ static token advance(parser_t* parser) {
 
 static inline token peek(parser_t* parser) { return parser->curr; }
 
+/*
+ * Checks if current token's type is `tt`. Returns true and consumes the
+ * token if that is the case.
+ *
+ * Current token is left intact if the token type does not match.
+ * i.o.w, advance is not called.
+ */
+static bool match(parser_t* parser, token_type tt) {
+    token tok = peek(parser);
+    bool matches = tok.type == tt;
+
+    if (matches) {
+        advance(parser);
+    }
+
+    return matches;
+}
+
 static ast_stmt_node* stmt(parser_t* parser) {
     ast_stmt_node* node = NULL;
 
@@ -153,11 +171,9 @@ static ast_stmt_node* var_decl(parser_t* parser) {
         value = expr(parser);
     }
 
-    if (peek(parser).type != TOK_SEMI) {
+    if (!match(parser, TOK_SEMI)) {
         __die("expected ';' after variable declaration");
     }
-
-    advance(parser);
 
     return make_ast_var_decl(parser->allocator, name, value, mut);
 }
@@ -182,11 +198,9 @@ static ast_stmt_node* block(parser_t* parser) {
         tail = next;
     }
 
-    if (peek(parser).type != TOK_BRACE_CLOSE) {
+    if (!match(parser, TOK_BRACE_CLOSE)) {  // }
         __die("unclosed block");
     }
-
-    advance(parser);  // }
 
     return make_ast_block(parser->allocator, body);
 }
@@ -204,9 +218,7 @@ static ast_stmt_node* if_else(parser_t* parser) {
 
     ast_stmt_node* else_body = NULL;
 
-    if (peek(parser).type == TOK_ELSE) {
-        advance(parser);
-
+    if (match(parser, TOK_ELSE)) {
         if (peek(parser).type == TOK_IF) {
             else_body = if_else(parser);
         } else if (peek(parser).type == TOK_BRACE_OPEN) {
@@ -223,11 +235,9 @@ static ast_stmt_node* expr_stmt(parser_t* parser) {
     ast_expr_node* expr_node = expr(parser);
     ast_stmt_node* node = make_ast_expr_stmt(parser->allocator, expr_node);
 
-    if (peek(parser).type != TOK_SEMI) {
+    if (!match(parser, TOK_SEMI)) {
         __die("expected ';' after statement");
     }
-
-    advance(parser);
 
     return node;
 }
@@ -237,9 +247,7 @@ static ast_expr_node* expr(parser_t* parser) { return or_op(parser); }
 static ast_expr_node* or_op(parser_t* parser) {
     ast_expr_node* left = and_op(parser);
 
-    while (!lex_eof(&parser->lexer) && peek(parser).type == TOK_OR) {
-        advance(parser);
-
+    while (!lex_eof(&parser->lexer) && match(parser, TOK_OR)) {
         ast_expr_node* right = and_op(parser);
         left = make_ast_binary(parser->allocator, TOK_OR, left, right);
     }
@@ -250,9 +258,7 @@ static ast_expr_node* or_op(parser_t* parser) {
 static ast_expr_node* and_op(parser_t* parser) {
     ast_expr_node* left = bitwise_or(parser);
 
-    while (!lex_eof(&parser->lexer) && peek(parser).type == TOK_AND) {
-        advance(parser);
-
+    while (!lex_eof(&parser->lexer) && match(parser, TOK_AND)) {
         ast_expr_node* right = bitwise_or(parser);
         left = make_ast_binary(parser->allocator, TOK_AND, left, right);
     }
@@ -263,9 +269,7 @@ static ast_expr_node* and_op(parser_t* parser) {
 static ast_expr_node* bitwise_or(parser_t* parser) {
     ast_expr_node* left = bitwise_xor(parser);
 
-    while (!lex_eof(&parser->lexer) && peek(parser).type == TOK_PIPE) {
-        advance(parser);
-
+    while (!lex_eof(&parser->lexer) && match(parser, TOK_PIPE)) {
         ast_expr_node* right = bitwise_xor(parser);
         left = make_ast_binary(parser->allocator, TOK_PIPE, left, right);
     }
@@ -276,9 +280,7 @@ static ast_expr_node* bitwise_or(parser_t* parser) {
 static ast_expr_node* bitwise_xor(parser_t* parser) {
     ast_expr_node* left = bitwise_and(parser);
 
-    while (!lex_eof(&parser->lexer) && peek(parser).type == TOK_CARET) {
-        advance(parser);
-
+    while (!lex_eof(&parser->lexer) && match(parser, TOK_CARET)) {
         ast_expr_node* right = bitwise_and(parser);
         left = make_ast_binary(parser->allocator, TOK_CARET, left, right);
     }
@@ -289,9 +291,7 @@ static ast_expr_node* bitwise_xor(parser_t* parser) {
 static ast_expr_node* bitwise_and(parser_t* parser) {
     ast_expr_node* left = equality(parser);
 
-    while (!lex_eof(&parser->lexer) && peek(parser).type == TOK_AMP) {
-        advance(parser);
-
+    while (!lex_eof(&parser->lexer) && match(parser, TOK_AMP)) {
         ast_expr_node* right = equality(parser);
         left = make_ast_binary(parser->allocator, TOK_AMP, left, right);
     }
@@ -303,9 +303,8 @@ static ast_expr_node* equality(parser_t* parser) {
     ast_expr_node* left = comparision(parser);
 
     while (!lex_eof(&parser->lexer) &&
-           (peek(parser).type == TOK_EQ || peek(parser).type == TOK_NEQ)) {
-        token op = peek(parser);
-        advance(parser);
+           (match(parser, TOK_EQ) || match(parser, TOK_NEQ))) {
+        token op = parser->prev;
 
         ast_expr_node* right = comparision(parser);
         left = make_ast_binary(parser->allocator, op.type, left, right);
@@ -318,10 +317,9 @@ static ast_expr_node* comparision(parser_t* parser) {
     ast_expr_node* left = term(parser);
 
     while (!lex_eof(&parser->lexer) &&
-           (peek(parser).type == TOK_GT || peek(parser).type == TOK_GTEQ ||
-            peek(parser).type == TOK_LT || peek(parser).type == TOK_LTEQ)) {
-        token op = peek(parser);
-        advance(parser);
+           (match(parser, TOK_GT) || match(parser, TOK_GTEQ) ||
+            match(parser, TOK_LT) || match(parser, TOK_LTEQ))) {
+        token op = parser->prev;
 
         ast_expr_node* right = term(parser);
         left = make_ast_binary(parser->allocator, op.type, left, right);
@@ -334,9 +332,8 @@ static ast_expr_node* term(parser_t* parser) {
     ast_expr_node* left = factor(parser);
 
     while (!lex_eof(&parser->lexer) &&
-           (peek(parser).type == TOK_PLUS || peek(parser).type == TOK_MINUS)) {
-        token op = peek(parser);
-        advance(parser);
+           (match(parser, TOK_PLUS) || match(parser, TOK_MINUS))) {
+        token op = parser->prev;
 
         ast_expr_node* right = factor(parser);
         left = make_ast_binary(parser->allocator, op.type, left, right);
@@ -349,10 +346,9 @@ static ast_expr_node* factor(parser_t* parser) {
     ast_expr_node* left = unary(parser);
 
     while (!lex_eof(&parser->lexer) &&
-           (peek(parser).type == TOK_MUL || peek(parser).type == TOK_DIV ||
-            peek(parser).type == TOK_PERC)) {
-        token op = peek(parser);
-        advance(parser);
+           (match(parser, TOK_MUL) || match(parser, TOK_DIV) ||
+            match(parser, TOK_PERC))) {
+        token op = parser->prev;
 
         ast_expr_node* right = unary(parser);
         left = make_ast_binary(parser->allocator, op.type, left, right);
@@ -362,11 +358,9 @@ static ast_expr_node* factor(parser_t* parser) {
 }
 
 static ast_expr_node* unary(parser_t* parser) {
-    token_type tt = peek(parser).type;
-
-    if (tt == TOK_MINUS || tt == TOK_PLUS || tt == TOK_BANG) {
-        advance(parser);
-
+    if (match(parser, TOK_MINUS) || match(parser, TOK_PLUS) ||
+        match(parser, TOK_BANG)) {
+        token_type tt = parser->prev.type;
         ast_expr_node* expr = unary(parser);
         return make_ast_unary(parser->allocator, tt, expr);
     }
@@ -385,17 +379,13 @@ static vec arguments(parser_t* parser) {
         ast_expr_node* arg = expr(parser);
         vec_push(&args, ast_expr_node*, &arg);
 
-        if (peek(parser).type == TOK_COMMA) {
-            advance(parser);
-        }
+        match(parser, TOK_COMMA);
     }
 
-    if (peek(parser).type != TOK_PAREN_CLOSE) {
+    if (!match(parser, TOK_PAREN_CLOSE)) {
         vec_free(&args);
         __die("expected ')'");
     }
-
-    advance(parser);
 
     return args;
 }
@@ -403,8 +393,7 @@ static vec arguments(parser_t* parser) {
 static ast_expr_node* function_call(parser_t* parser) {
     ast_expr_node* maybe_callee = primary(parser);
 
-    while (peek(parser).type == TOK_PAREN_OPEN) {
-        advance(parser);
+    while (match(parser, TOK_PAREN_OPEN)) {
         maybe_callee =
             make_ast_call(parser->allocator, maybe_callee, arguments(parser));
     }
@@ -453,13 +442,10 @@ static ast_expr_node* group(parser_t* parser) {
     advance(parser);  // (
 
     ast_expr_node* result = expr(parser);
-    token closing = peek(parser);
 
-    if (closing.type != TOK_PAREN_CLOSE) {
+    if (!match(parser, TOK_PAREN_CLOSE)) {
         __die("expected ')'");
     }
-
-    advance(parser);  // )
 
     return result;
 }
