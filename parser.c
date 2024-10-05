@@ -20,6 +20,7 @@ typedef struct {
 static ast_stmt_node* var_decl(parser_t* parser);
 static ast_stmt_node* block(parser_t* parser);
 static ast_stmt_node* if_else(parser_t* parser);
+static ast_stmt_node* while_(parser_t* parser);
 static ast_stmt_node* expr_stmt(parser_t* parser);
 
 static ast_expr_node* expr(parser_t* parser);
@@ -148,6 +149,10 @@ static ast_stmt_node* stmt(parser_t* parser) {
             node = if_else(parser);
             break;
 
+        case TOK_WHILE:
+            node = while_(parser);
+            break;
+
         default:
             node = expr_stmt(parser);
     }
@@ -223,6 +228,21 @@ static ast_stmt_node* if_else(parser_t* parser) {
     }
 
     return make_ast_if_else(parser->allocator, condition, body, else_body);
+}
+
+static ast_stmt_node* while_(parser_t* parser) {
+    advance(parser);  // while
+
+    ast_expr_node* condition = expr(parser);
+
+    token brace_open = peek(parser);
+    if (brace_open.type != TOK_BRACE_OPEN) {
+        __die("expected '{' after while");
+    }
+
+    ast_stmt_node* body = block(parser);
+
+    return make_ast_while(parser->allocator, condition, body);
 }
 
 static ast_stmt_node* expr_stmt(parser_t* parser) {

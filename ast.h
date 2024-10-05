@@ -135,6 +135,7 @@ typedef enum {
     AST_VAR_DECL,
     AST_BLOCK,
     AST_IF_ELSE,
+    AST_WHILE,
 } ast_stmt_node_type;
 
 struct _ast_stmt_node;
@@ -159,12 +160,18 @@ typedef struct {
     struct _ast_stmt_node* else_body;
 } ast_node_if_else;
 
+typedef struct {
+    ast_expr_node* condition;
+    struct _ast_stmt_node* body;
+} ast_node_while;
+
 typedef struct _ast_stmt_node {
     union {
         ast_node_expr_stmt expr_stmt;
         ast_node_var_decl var_decl;
         ast_node_block block;
         ast_node_if_else if_else;
+        ast_node_while while_;
     };
     ast_stmt_node_type type;
 
@@ -184,6 +191,10 @@ ast_stmt_node* make_ast_if_else(
     ast_stmt_node* else_body
 );
 
+ast_stmt_node* make_ast_while(
+    allocator_t* allocator, ast_expr_node* condition, ast_stmt_node* body
+);
+
 void free_ast_stmt(allocator_t* allocator, ast_stmt_node* node);
 
 #define AST_STMT_WALKER(name, return_type)                                   \
@@ -193,6 +204,7 @@ void free_ast_stmt(allocator_t* allocator, ast_stmt_node* node);
         return_type (*walk_var_decl)(struct _##name*, ast_node_var_decl*);   \
         return_type (*walk_block)(struct _##name*, ast_node_block*);         \
         return_type (*walk_if_else)(struct _##name*, ast_node_if_else*);     \
+        return_type (*walk_while)(struct _##name*, ast_node_while*);         \
     } name;                                                                  \
                                                                              \
     return_type name##_walk(name* walker, ast_stmt_node* node) {             \
@@ -208,6 +220,9 @@ void free_ast_stmt(allocator_t* allocator, ast_stmt_node* node);
             }                                                                \
             case AST_IF_ELSE: {                                              \
                 return walker->walk_if_else(walker, &node->if_else);         \
+            }                                                                \
+            case AST_WHILE: {                                                \
+                return walker->walk_while(walker, &node->while_);            \
             }                                                                \
         }                                                                    \
     }

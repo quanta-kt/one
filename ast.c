@@ -166,6 +166,21 @@ ast_stmt_node* make_ast_if_else(
     return node;
 }
 
+ast_stmt_node* make_ast_while(
+    allocator_t* allocator, ast_expr_node* condition, ast_stmt_node* body
+) {
+    ast_stmt_node* node = ALLOC(allocator, ast_stmt_node);
+    *node = stmt_node_defaults;
+
+    node->type = AST_WHILE;
+    node->while_ = (ast_node_while){
+        .condition = condition,
+        .body = body,
+    };
+
+    return node;
+}
+
 static void _free_ast_stmt(allocator_t* allocator, ast_stmt_node* node) {
     switch (node->type) {
         case AST_EXPR_STMT: {
@@ -188,6 +203,12 @@ static void _free_ast_stmt(allocator_t* allocator, ast_stmt_node* node) {
             free_ast_expr(allocator, node->if_else.condition);
             free_ast_stmt(allocator, node->if_else.body);
             free_ast_stmt(allocator, node->if_else.else_body);
+            break;
+        }
+
+        case AST_WHILE: {
+            free_ast_expr(allocator, node->while_.condition);
+            free_ast_stmt(allocator, node->while_.body);
             break;
         }
     }
