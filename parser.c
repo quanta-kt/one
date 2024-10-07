@@ -383,17 +383,16 @@ static ast_expr_node* unary(parser_t* parser) {
 static vec arguments(parser_t* parser) {
     vec args = make_vec(ast_expr_node*, parser->allocator);
 
-    while (!lex_eof(&parser->lexer) && !match(parser, TOK_PAREN_CLOSE)) {
+    while (!lex_eof(&parser->lexer) && peek(parser).type != TOK_PAREN_CLOSE) {
         ast_expr_node* arg = expr(parser);
         vec_push(&args, ast_expr_node*, &arg);
 
-        match(parser, TOK_COMMA);
+        if (!match(parser, TOK_COMMA)) {
+            break;
+        }
     }
 
-    if (parser->prev.type != TOK_PAREN_CLOSE) {
-        vec_free(&args);
-        __die("expected ')'");
-    }
+    expect(parser, TOK_PAREN_CLOSE, "expected a ')' after function arguments");
 
     return args;
 }
