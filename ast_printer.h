@@ -3,6 +3,6 @@
 
 #include "ast.h"
 
-void print_ast(ast_stmt_node* node);
+void print_ast(ast_item_node* node);
 
 #endif  // ast_printer

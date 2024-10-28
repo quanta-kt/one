@@ -8,6 +8,8 @@ AST_EXPR_WALKER(ast_expr_printer_t, void)
 
 AST_STMT_WALKER(ast_stmt_printer_t, void)
 
+AST_ITEM_WALKER(ast_item_printer_t, void)
+
 static void walk_num(ast_expr_printer_t* _, ast_node_num* node) {
     printf("%Le", node->value);
 }
@@ -206,12 +208,52 @@ ast_stmt_printer_t stmt_printer = (ast_stmt_printer_t){
     .walk_while = walk_while,
 };
 
-void print_ast(ast_stmt_node* node) {
+static void print_stmt(ast_stmt_node* node) {
     ast_stmt_node* curr = node;
 
     while (curr != NULL) {
         ast_stmt_printer_t_walk(&stmt_printer, curr);
-        putchar('\n');
+        curr = curr->next;
+
+        // If there is another statement on the list, we want a separator
+        // between that and the current one.
+        if (curr != NULL) {
+            putchar(' ');
+        }
+    }
+}
+
+static void walk_function(ast_item_printer_t* self, ast_node_function* fn) {
+    printf("(fn ");
+
+    printf("%.*s ", (int)fn->name.span_size, fn->name.span);
+
+    putchar('(');
+    ast_param* curr = fn->params;
+    while (curr != NULL) {
+        printf("%.*s", (int)curr->name.span_size, curr->name.span);
+
+        curr = curr->next;
+        if (curr != NULL) {
+            putchar(' ');
+        }
+    }
+    putchar(')');
+
+    if (fn->body != NULL) putchar(' ');
+    print_stmt(fn->body);
+
+    printf(")\n");
+}
+
+ast_item_printer_t item_printer =
+    (ast_item_printer_t){.walk_function = walk_function};
+
+void print_ast(ast_item_node* node) {
+    ast_item_node* curr = node;
+
+    while (curr != NULL) {
+        ast_item_printer_t_walk(&item_printer, curr);
         curr = curr->next;
     }
 }

@@ -13,10 +13,14 @@ typedef struct {
     token curr;
     token prev;
 
-    ast_stmt_node* ast_head;
-    ast_stmt_node* ast_tail;
+    ast_item_node* item_head;
+    ast_item_node* item_tail;
 } parser_t;
 
+static ast_item_node* item(parser_t* parser);
+static ast_item_node* function_decl(parser_t* parser);
+
+static ast_stmt_node* stmt(parser_t* parser);
 static ast_stmt_node* var_decl(parser_t* parser);
 static ast_stmt_node* block(parser_t* parser);
 static ast_stmt_node* if_else(parser_t* parser);
@@ -74,10 +78,18 @@ static parser_t make_parser(allocator_t* allocator, lexer_t lexer) {
         .lexer = lexer,
         .allocator = allocator,
 
-        .ast_head = NULL,
-        .ast_tail = NULL,
+        .item_head = NULL,
+        .item_tail = NULL,
     };
 }
+
+#define LL_APPEND(head, tail, node) \
+    if (*head == NULL) {            \
+        *head = *tail = item;       \
+    } else {                        \
+        (*tail)->next = item;       \
+        *tail = item;               \
+    }
 
 /**
  * Given the head and the tail of a statement's linked list, appends 'item'
@@ -86,16 +98,33 @@ static parser_t make_parser(allocator_t* allocator, lexer_t lexer) {
 static void stmt_list_append(
     ast_stmt_node** head, ast_stmt_node** tail, ast_stmt_node* item
 ) {
-    if (*head == NULL) {
-        *head = *tail = item;
-    } else {
-        (*tail)->next = item;
-        *tail = item;
-    }
+    LL_APPEND(head, tail, item);
 }
 
-static void insert_stmt(parser_t* parser, ast_stmt_node* node) {
-    stmt_list_append(&parser->ast_head, &parser->ast_tail, node);
+/**
+ * Given the head and the tail of a linked list of items, appends 'item'
+ * to it.
+ */
+static void item_list_append(
+    ast_item_node** head, ast_item_node** tail, ast_item_node* item
+) {
+    LL_APPEND(head, tail, item);
+}
+
+/**
+ * Given the head and the tail of a linked list of params, appends 'item'
+ * to it.
+ */
+static void param_list_append(
+    ast_param** head, ast_param** tail, ast_param* item
+) {
+    LL_APPEND(head, tail, item);
+}
+
+#undef LL_APPEND
+
+static void insert_item(parser_t* parser, ast_item_node* node) {
+    item_list_append(&parser->item_head, &parser->item_tail, node);
 }
 
 static token advance(parser_t* parser) {
@@ -140,6 +169,55 @@ static token expect(parser_t* parser, token_type tt, char const* message) {
     }
 
     return parser->prev;
+}
+
+static ast_item_node* item(parser_t* parser) {
+    if (match(parser, TOK_FN)) {
+        return function_decl(parser);
+    }
+
+    __die("expected a function declaration");
+}
+
+static ast_param* params(parser_t* parser) {
+    ast_param* head = NULL;
+    ast_param* tail = NULL;
+
+    while (!lex_eof(&parser->lexer) && peek(parser).type != TOK_PAREN_CLOSE) {
+        token param_name =
+            expect(parser, TOK_IDEN, "expected a parameter name");
+
+        ast_param* item = make_ast_param(parser->allocator, param_name);
+        param_list_append(&head, &tail, item);
+
+        if (!match(parser, TOK_COMMA)) {
+            break;
+        }
+    }
+
+    return head;
+}
+
+static ast_item_node* function_decl(parser_t* parser) {
+    // 'fn' token is consumed before calling function_decl
+
+    token name = expect(parser, TOK_IDEN, "expected an identifier after 'fn'");
+
+    expect(parser, TOK_PAREN_OPEN, "expected a '(' after function name");
+    ast_param* params_list = params(parser);
+    expect(parser, TOK_PAREN_CLOSE, "expected a ')' after function params");
+
+    expect(parser, TOK_BRACE_OPEN, "expected function body");
+
+    ast_stmt_node* body = NULL;
+    ast_stmt_node* body_tail = NULL;
+
+    while (!lex_eof(&parser->lexer) && !match(parser, TOK_BRACE_CLOSE)) {
+        ast_stmt_node* curr = stmt(parser);
+        stmt_list_append(&body, &body_tail, curr);
+    }
+
+    return make_ast_function(parser->allocator, name, params_list, body);
 }
 
 static ast_stmt_node* stmt(parser_t* parser) {
@@ -523,13 +601,13 @@ static ast_expr_node* boolean(parser_t* parser) {
     return make_ast_bool(parser->allocator, parser->prev.type == TOK_TRUE);
 }
 
-ast_stmt_node* parse(allocator_t* allocator, char* src, size_t src_len) {
+ast_item_node* parse(allocator_t* allocator, char* src, size_t src_len) {
     parser_t parser = make_parser(allocator, make_lexer(src, src_len));
     advance(&parser);
 
     do {
-        insert_stmt(&parser, stmt(&parser));
+        insert_item(&parser, item(&parser));
     } while (!lex_eof(&parser.lexer));
 
-    return parser.ast_head;
+    return parser.item_head;
 }

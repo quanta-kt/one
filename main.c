@@ -41,10 +41,10 @@ int run_repl() {
     allocator_t* allocator = gpa();
 
     while (getline(&line, &len, stdin) != -1) {
-        ast_stmt_node* ast = parse(allocator, line, len);
+        ast_item_node* ast = parse(allocator, line, len);
 
         print_ast(ast);
-        free_ast_stmt(allocator, ast);
+        free_ast_item(allocator, ast);
     }
 
     return 0;
@@ -56,10 +56,10 @@ int run_file(FILE* file) {
 
     allocator_t* allocator = gpa();
 
-    ast_stmt_node* ast = parse(allocator, buf, len);
+    ast_item_node* ast = parse(allocator, buf, len);
     print_ast(ast);
 
-    free_ast_stmt(allocator, ast);
+    free_ast_item(allocator, ast);
     free(buf);
     return 0;
 }
