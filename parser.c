@@ -79,14 +79,23 @@ static parser_t make_parser(allocator_t* allocator, lexer_t lexer) {
     };
 }
 
-static void insert_stmt(parser_t* parser, ast_stmt_node* node) {
-    if (parser->ast_head == NULL) {
-        parser->ast_head = (parser->ast_tail = node);
-        return;
+/**
+ * Given the head and the tail of a statement's linked list, appends 'item'
+ * to it.
+ */
+static void stmt_list_append(
+    ast_stmt_node** head, ast_stmt_node** tail, ast_stmt_node* item
+) {
+    if (*head == NULL) {
+        *head = *tail = item;
+    } else {
+        (*tail)->next = item;
+        *tail = item;
     }
+}
 
-    parser->ast_tail->next = node;
-    parser->ast_tail = node;
+static void insert_stmt(parser_t* parser, ast_stmt_node* node) {
+    stmt_list_append(&parser->ast_head, &parser->ast_tail, node);
 }
 
 static token advance(parser_t* parser) {
@@ -188,15 +197,7 @@ static ast_stmt_node* block(parser_t* parser) {
     while (peek(parser).type != TOK_BRACE_CLOSE && peek(parser).type != TOK_EOF
     ) {
         ast_stmt_node* next = stmt(parser);
-
-        if (tail == NULL) {
-            tail = next;
-            body = next;
-        } else {
-            tail->next = next;
-        }
-
-        tail = next;
+        stmt_list_append(&body, &tail, next);
     }
 
     expect(parser, TOK_BRACE_CLOSE, "unclosed block");
