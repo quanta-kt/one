@@ -223,3 +223,51 @@ void free_ast_stmt(allocator_t* allocator, ast_stmt_node* node) {
         node = next;
     }
 }
+
+ast_param* make_ast_param(allocator_t* allocator, token name) {
+    ast_param* p = ALLOC(allocator, ast_param);
+    p->name = name;
+    p->next = NULL;
+
+    return p;
+}
+
+ast_item_node* make_ast_function(
+    allocator_t* allocator, token name, ast_param* params, ast_stmt_node* body
+) {
+    ast_item_node* node = ALLOC(allocator, ast_item_node);
+    node->type = AST_FN;
+    node->function.name = name;
+    node->function.params = params;
+    node->function.body = body;
+
+    return node;
+}
+
+static void free_params(allocator_t* allocator, ast_param* params) {
+    ast_param* curr = params;
+    while (curr != NULL) {
+        ast_param* t = curr;
+        curr = t->next;
+
+        FREE(allocator, t, ast_param);
+    }
+}
+
+void free_ast_item(allocator_t* allocator, ast_item_node* node) {
+    switch (node->type) {
+        case AST_FN: {
+            ast_param* curr = node->function.params;
+            if (curr != NULL) {
+                free_params(allocator, node->function.params);
+            }
+
+            free_ast_stmt(allocator, node->function.body);
+        } break;
+
+        default:
+            break;
+    }
+
+    FREE(allocator, node, ast_item_node);
+}

@@ -227,4 +227,52 @@ void free_ast_stmt(allocator_t* allocator, ast_stmt_node* node);
         }                                                                    \
     }
 
+typedef enum {
+    AST_FN,
+    AST_STRUCT,
+} ast_item_node_type;
+
+struct _ast_item_node;
+
+typedef struct _ast_param {
+    token name;
+    struct _ast_param* next;
+} ast_param;
+
+typedef struct {
+    token name;
+    ast_param* params;
+    ast_stmt_node* body;
+} ast_node_function;
+
+typedef struct _ast_item_node {
+    union {
+        ast_node_function function;
+    };
+    ast_item_node_type type;
+
+    struct _ast_item_node* next;
+} ast_item_node;
+
+ast_param* make_ast_param(allocator_t* allocator, token name);
+ast_item_node* make_ast_function(
+    allocator_t* allocator, token name, ast_param* params, ast_stmt_node* body
+);
+
+void free_ast_item(allocator_t* allocator, ast_item_node* node);
+
+#define AST_ITEM_WALKER(name, return_type)                                 \
+    struct _##name;                                                        \
+    typedef struct _##name {                                               \
+        return_type (*walk_function)(struct _##name*, ast_node_function*); \
+    } name;                                                                \
+                                                                           \
+    return_type name##_walk(name* walker, ast_item_node* node) {           \
+        switch (node->type) {                                              \
+            case AST_FN: {                                                 \
+                return walker->walk_function(walker, &node->function);     \
+            }                                                              \
+        }                                                                  \
+    }
+
 #endif  // AST_H
