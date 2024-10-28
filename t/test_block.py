@@ -1,4 +1,4 @@
-from lib import code2sexpr
+from lib import stmt2sexpr
 
 
 # FIXME: get rid of this once onec is able to read multiline statements
@@ -38,4 +38,4 @@ def test_blocks_can_nest():
         "(block (if (> a b) (block a) (block b)))))"
     )
 
-    assert code2sexpr(code) == expected
+    assert stmt2sexpr(code) == expected

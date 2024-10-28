@@ -16,3 +16,15 @@ def code2sexpr(code: str) -> str:
     proc.stdin.close()
 
     return proc.stdout.read().decode().strip()
+
+
+def stmt2sexpr(stmt: str) -> str:
+    template = "".join("fn main() {{ {0} }}")
+
+    code = template.format(stmt)
+    sexpr = code2sexpr(code)
+
+    prefix = "(fn main () "
+    suffix = ")"
+
+    return sexpr[len(prefix) : -len(suffix)]

@@ -45,6 +45,7 @@ TEST_FILES += $(TEST_DIR)/test_if.py
 TEST_FILES += $(TEST_DIR)/test_var_decl.py
 TEST_FILES += $(TEST_DIR)/test_while.py
 TEST_FILES += $(TEST_DIR)/test_call.py
+TEST_FILES += $(TEST_DIR)/test_fn.py
 
 test: $(OUTPUT)
 	$(PYTHON) -m pytest $(TEST_FILES)
