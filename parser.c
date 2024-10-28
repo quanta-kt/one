@@ -46,6 +46,7 @@ static ast_expr_node* iden(parser_t* parser);
 static ast_expr_node* group(parser_t* parser);
 static ast_expr_node* str(parser_t* parser);
 static ast_expr_node* boolean(parser_t* parser);
+static ast_expr_node* lambda(parser_t* parser);
 
 static void __die(char const* err) {
     fprintf(stderr, "%s\n", err);
@@ -507,6 +508,9 @@ static ast_expr_node* primary(parser_t* parser) {
         case TOK_FALSE:
             return boolean(parser);
 
+        case TOK_FN:
+            return lambda(parser);
+
         default:
             __die("expected primary expression");
     }
@@ -599,6 +603,26 @@ static ast_expr_node* str(parser_t* parser) {
 static ast_expr_node* boolean(parser_t* parser) {
     advance(parser);
     return make_ast_bool(parser->allocator, parser->prev.type == TOK_TRUE);
+}
+
+static ast_expr_node* lambda(parser_t* parser) {
+    advance(parser);  // fn
+
+    expect(parser, TOK_PAREN_OPEN, "expected a '(' after function name");
+    ast_param* params_list = params(parser);
+    expect(parser, TOK_PAREN_CLOSE, "expected a ')' after function params");
+
+    expect(parser, TOK_BRACE_OPEN, "expected function body");
+
+    ast_stmt_node* body = NULL;
+    ast_stmt_node* body_tail = NULL;
+
+    while (!lex_eof(&parser->lexer) && !match(parser, TOK_BRACE_CLOSE)) {
+        ast_stmt_node* curr = stmt(parser);
+        stmt_list_append(&body, &body_tail, curr);
+    }
+
+    return make_ast_lambda(parser->allocator, params_list, body);
 }
 
 ast_item_node* parse(allocator_t* allocator, char* src, size_t src_len) {

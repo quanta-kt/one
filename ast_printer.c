@@ -10,6 +10,8 @@ AST_STMT_WALKER(ast_stmt_printer_t, void)
 
 AST_ITEM_WALKER(ast_item_printer_t, void)
 
+static void print_stmt(ast_stmt_node* node);
+
 static void walk_num(ast_expr_printer_t* _, ast_node_num* node) {
     printf("%Le", node->value);
 }
@@ -132,6 +134,27 @@ static void walk_bool(ast_expr_printer_t* _, ast_node_bool* node) {
     printf("%s", node->value ? "true" : "false");
 }
 
+static void walk_lambda(ast_expr_printer_t* _, ast_node_lambda* fn) {
+    printf("(fn ");
+
+    ast_param* curr = fn->params;
+    putchar('(');
+    while (curr != NULL) {
+        printf("%.*s", (int)curr->name.span_size, curr->name.span);
+        curr = curr->next;
+        
+        if (curr != NULL) {
+            putchar(' ');
+        }
+    }
+    putchar(')');
+
+    if (fn->body != NULL) putchar(' ');
+    print_stmt(fn->body);
+
+    printf(")");
+}
+
 ast_expr_printer_t expr_printer = (ast_expr_printer_t){
     .walk_binary = walk_binary,
     .walk_unary = walk_unary,
@@ -140,6 +163,7 @@ ast_expr_printer_t expr_printer = (ast_expr_printer_t){
     .walk_iden = walk_iden,
     .walk_str = walk_str,
     .walk_bool = walk_bool,
+    .walk_lambda = walk_lambda,
 };
 
 static void print_expr(ast_expr_node* node) {

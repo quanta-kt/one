@@ -5,6 +5,14 @@
 #include "lex.h"
 #include "vec.h"
 
+typedef struct _ast_param {
+    token name;
+    struct _ast_param* next;
+} ast_param;
+
+struct _ast_stmt_node;
+typedef struct _ast_stmt_node ast_stmt_node;
+
 typedef enum {
     AST_NUM,
     AST_BOOL,
@@ -13,6 +21,7 @@ typedef enum {
     AST_BINARY,
     AST_UNARY,
     AST_CALL,
+    AST_LAMBDA,
 } ast_expr_node_type;
 
 struct _ast_expr_node;
@@ -56,6 +65,11 @@ typedef struct {
     vec args;  //  vec of struct _ast_expr_node*
 } ast_node_call;
 
+typedef struct {
+    struct _ast_stmt_node* body;
+    ast_param* params;
+} ast_node_lambda;
+
 typedef struct _ast_expr_node {
     union {
         ast_node_num num;
@@ -65,6 +79,7 @@ typedef struct _ast_expr_node {
         ast_node_unary unary;
         ast_node_identifier identifier;
         ast_node_call call;
+        ast_node_lambda lambda;
     };
 
     ast_expr_node_type type;
@@ -90,6 +105,9 @@ ast_expr_node* make_ast_unary(
 ast_expr_node* make_ast_call(
     allocator_t* allocator, ast_expr_node* function, vec args
 );
+ast_expr_node* make_ast_lambda(
+    allocator_t* allocator, ast_param* params, ast_stmt_node* body
+);
 
 void free_ast_expr(allocator_t* allocator, ast_expr_node* node);
 
@@ -103,6 +121,7 @@ void free_ast_expr(allocator_t* allocator, ast_expr_node* node);
         return_type (*walk_iden)(struct _##name*, ast_node_identifier*); \
         return_type (*walk_str)(struct _##name*, ast_node_str*);         \
         return_type (*walk_bool)(struct _##name*, ast_node_bool*);       \
+        return_type (*walk_lambda)(struct _##name*, ast_node_lambda*);   \
     } name;                                                              \
                                                                          \
     return_type name##_walk(name* walker, ast_expr_node* node) {         \
@@ -127,6 +146,9 @@ void free_ast_expr(allocator_t* allocator, ast_expr_node* node);
                                                                          \
             case AST_STR:                                                \
                 return walker->walk_str(walker, &node->str);             \
+                                                                         \
+            case AST_LAMBDA:                                             \
+                return walker->walk_lambda(walker, &node->lambda);       \
         }                                                                \
     }
 
@@ -137,8 +159,6 @@ typedef enum {
     AST_IF_ELSE,
     AST_WHILE,
 } ast_stmt_node_type;
-
-struct _ast_stmt_node;
 
 typedef struct {
     ast_expr_node* expr;
@@ -165,7 +185,7 @@ typedef struct {
     struct _ast_stmt_node* body;
 } ast_node_while;
 
-typedef struct _ast_stmt_node {
+struct _ast_stmt_node {
     union {
         ast_node_expr_stmt expr_stmt;
         ast_node_var_decl var_decl;
@@ -176,7 +196,7 @@ typedef struct _ast_stmt_node {
     ast_stmt_node_type type;
 
     struct _ast_stmt_node* next;
-} ast_stmt_node;
+};
 
 ast_stmt_node* make_ast_expr_stmt(allocator_t* allocator, ast_expr_node* expr);
 ast_stmt_node* make_ast_var_decl(
@@ -233,11 +253,6 @@ typedef enum {
 } ast_item_node_type;
 
 struct _ast_item_node;
-
-typedef struct _ast_param {
-    token name;
-    struct _ast_param* next;
-} ast_param;
 
 typedef struct {
     token name;

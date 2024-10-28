@@ -46,6 +46,7 @@ TEST_FILES += $(TEST_DIR)/test_var_decl.py
 TEST_FILES += $(TEST_DIR)/test_while.py
 TEST_FILES += $(TEST_DIR)/test_call.py
 TEST_FILES += $(TEST_DIR)/test_fn.py
+TEST_FILES += $(TEST_DIR)/test_lambda.py
 
 test: $(OUTPUT)
 	$(PYTHON) -m pytest $(TEST_FILES)

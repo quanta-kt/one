@@ -4,6 +4,8 @@
 
 #include "alloc.h"
 
+static void free_params(allocator_t* allocator, ast_param* params);
+
 ast_expr_node* make_ast_num(allocator_t* allocator, double long value) {
     ast_expr_node* node = ALLOC(allocator, ast_expr_node);
     node->type = AST_NUM;
@@ -82,6 +84,19 @@ ast_expr_node* make_ast_call(
     return node;
 }
 
+ast_expr_node* make_ast_lambda(
+    allocator_t* allocator, ast_param* params, ast_stmt_node* body
+) {
+    ast_expr_node* node = ALLOC(allocator, ast_expr_node);
+    node->type = AST_LAMBDA;
+    node->lambda = (ast_node_lambda){
+        .body = body,
+        .params = params,
+    };
+
+    return node;
+}
+
 void free_ast_expr(allocator_t* allocator, ast_expr_node* node) {
     switch (node->type) {
         case AST_STR:
@@ -103,6 +118,11 @@ void free_ast_expr(allocator_t* allocator, ast_expr_node* node) {
             vec_free(&node->call.args);
             free_ast_expr(allocator, node->call.function);
             break;
+        }
+
+        case AST_LAMBDA: {
+            free_ast_stmt(allocator, node->lambda.body);
+            free_params(allocator, node->lambda.params);
         }
     }
 
