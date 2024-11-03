@@ -7,7 +7,7 @@ def code2sexpr(code: str) -> str:
     """
 
     proc = subprocess.Popen(
-        ["onec"],
+        ["onec", "--s-expr"],
         stdout=subprocess.PIPE,
         stdin=subprocess.PIPE,
     )
