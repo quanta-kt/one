@@ -5,6 +5,69 @@
 #include "lex.h"
 #include "vec.h"
 
+typedef enum {
+    TYPE_NAME_NUMBER,
+    TYPE_NAME_STRING,
+    TYPE_NAME_BOOLEAN,
+    TYPE_NAME_FUNCTION,
+} ast_typename_type;
+
+struct _ast_typename;
+
+typedef VEC(struct _ast_typename*) vec_typename;
+
+typedef struct {
+} ast_typename_number, ast_typename_string, ast_typename_boolean;
+
+typedef struct {
+    vec_typename params;
+    struct _ast_typename* return_type;
+} ast_typename_function;
+
+typedef struct _ast_typename {
+    union {
+        ast_typename_boolean boolean;
+        ast_typename_number number;
+        ast_typename_string string;
+        ast_typename_function function;
+    } as;
+
+    ast_typename_type type;
+} ast_typename;
+
+ast_typename* make_ast_typename(allocator_t* allocator, ast_typename_type type);
+
+ast_typename* make_ast_typename_function(
+    allocator_t* allocator, vec_typename params, ast_typename* return_type
+);
+
+void free_ast_typename(allocator_t* allocator, ast_typename* node);
+
+#define AST_TYPENAME_WALKER(name, return_type)                                      \
+    struct _##name;                                                                 \
+    typedef struct _##name {                                                        \
+        return_type (*walk_number_type)(struct _##name*, ast_typename_number*);     \
+        return_type (*walk_string_type)(struct _##name*, ast_typename_string*);     \
+        return_type (*walk_boolean_type)(struct _##name*, ast_typename_boolean*);   \
+        return_type (*walk_function_type)(struct _##name*, ast_typename_function*); \
+    } name;                                                                         \
+                                                                                    \
+    return_type name##_walk(name* walker, ast_typename* node) {                     \
+        switch (node->type) {                                                       \
+            case TYPE_NAME_NUMBER:                                                  \
+                return walker->walk_number_type(walker, &node->as.number);          \
+                                                                                    \
+            case TYPE_NAME_BOOLEAN:                                                 \
+                return walker->walk_boolean_type(walker, &node->as.boolean);        \
+                                                                                    \
+            case TYPE_NAME_STRING:                                                  \
+                return walker->walk_string_type(walker, &node->as.string);          \
+                                                                                    \
+            case TYPE_NAME_FUNCTION:                                                \
+                return walker->walk_function_type(walker, &node->as.function);      \
+        }                                                                           \
+    }
+
 typedef struct _ast_param {
     token name;
     struct _ast_param* next;
@@ -168,6 +231,7 @@ typedef struct {
 
 typedef struct {
     token name;
+    ast_typename* typename;
     ast_expr_node* value;
     bool mut;
 } ast_node_var_decl;
@@ -202,7 +266,11 @@ struct _ast_stmt_node {
 
 ast_stmt_node* make_ast_expr_stmt(allocator_t* allocator, ast_expr_node* expr);
 ast_stmt_node* make_ast_var_decl(
-    allocator_t* allocator, token name, ast_expr_node* value, bool mut
+    allocator_t* allocator,
+    token name,
+    ast_typename* typename,
+    ast_expr_node* value,
+    bool mut
 );
 ast_stmt_node* make_ast_block(allocator_t* allocator, ast_stmt_node* body);
 

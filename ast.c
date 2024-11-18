@@ -4,6 +4,44 @@
 
 #include "alloc.h"
 
+ast_typename* make_ast_typename(
+    allocator_t* allocator, ast_typename_type type
+) {
+    ast_typename* typename = ALLOC(allocator, ast_typename);
+    typename->type = type;
+    return typename;
+}
+
+ast_typename* make_ast_typename_function(
+    allocator_t* allocator, vec_typename params, ast_typename* return_type
+) {
+    ast_typename* ret = make_ast_typename(allocator, TYPE_NAME_FUNCTION);
+    ret->as.function.params = params;
+    ret->as.function.return_type = return_type;
+    return ret;
+}
+
+void free_ast_typename(allocator_t* allocator, ast_typename* node) {
+    switch (node->type) {
+        case TYPE_NAME_BOOLEAN:
+        case TYPE_NAME_STRING:
+        case TYPE_NAME_NUMBER:
+            break;
+
+        case TYPE_NAME_FUNCTION: {
+            ast_typename** param;
+            vec_foreach(&node->as.function.params, param) {
+                free_ast_typename(allocator, *param);
+            }
+            vec_free(&node->as.function.params);
+
+            free_ast_typename(allocator, node->as.function.return_type);
+        }; break;
+    }
+
+    FREE(allocator, node, ast_typename);
+}
+
 static void free_params(allocator_t* allocator, ast_param* params);
 
 ast_expr_node* make_ast_num(allocator_t* allocator, double long value) {
@@ -144,13 +182,18 @@ ast_stmt_node* make_ast_expr_stmt(allocator_t* allocator, ast_expr_node* expr) {
 }
 
 ast_stmt_node* make_ast_var_decl(
-    allocator_t* allocator, token name, ast_expr_node* value, bool mut
+    allocator_t* allocator,
+    token name,
+    ast_typename* typename,
+    ast_expr_node* value,
+    bool mut
 ) {
     ast_stmt_node* node = ALLOC(allocator, ast_stmt_node);
     *node = stmt_node_defaults;
 
     node->type = AST_VAR_DECL;
     node->var_decl.name = name;
+    node->var_decl.typename = typename;
     node->var_decl.value = value;
     node->var_decl.mut = mut;
 
@@ -211,6 +254,8 @@ static void _free_ast_stmt(allocator_t* allocator, ast_stmt_node* node) {
         case AST_VAR_DECL: {
             if (node->var_decl.value != NULL)
                 free_ast_expr(allocator, node->var_decl.value);
+            if (node->var_decl.typename != NULL)
+                free_ast_typename(allocator, node->var_decl.typename);
             break;
         }
 
