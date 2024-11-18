@@ -235,7 +235,10 @@ static ast_param* params(parser_t* parser) {
         token param_name =
             expect(parser, TOK_IDEN, "expected a parameter name");
 
-        ast_param* item = make_ast_param(parser->allocator, param_name);
+        expect(parser, TOK_COLON, "expected ':' after parameter name");
+        ast_typename* type = typename(parser);
+
+        ast_param* item = make_ast_param(parser->allocator, param_name, type);
         param_list_append(&head, &tail, item);
 
         if (!match(parser, TOK_COMMA)) {

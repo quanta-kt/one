@@ -70,6 +70,7 @@ void free_ast_typename(allocator_t* allocator, ast_typename* node);
 
 typedef struct _ast_param {
     token name;
+    ast_typename* type;
     struct _ast_param* next;
 } ast_param;
 
@@ -339,7 +340,7 @@ typedef struct _ast_item_node {
     struct _ast_item_node* next;
 } ast_item_node;
 
-ast_param* make_ast_param(allocator_t* allocator, token name);
+ast_param* make_ast_param(allocator_t* allocator, token name, ast_typename* type);
 ast_item_node* make_ast_function(
     allocator_t* allocator, token name, ast_param* params, ast_stmt_node* body
 );

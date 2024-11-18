@@ -192,9 +192,12 @@ static void walk_lambda(ast_expr_printer_t* _, ast_node_lambda* fn) {
     ast_param* curr = fn->params;
     putchar('(');
     while (curr != NULL) {
-        printf("%.*s", (int)curr->name.span_size, curr->name.span);
-        curr = curr->next;
+        printf("%.*s ", (int)curr->name.span_size, curr->name.span);
 
+        putchar(':');
+        print_typename(curr->type);
+
+        curr = curr->next;
         if (curr != NULL) {
             putchar(' ');
         }
@@ -314,7 +317,10 @@ static void walk_function(ast_item_printer_t* self, ast_node_function* fn) {
     putchar('(');
     ast_param* curr = fn->params;
     while (curr != NULL) {
-        printf("%.*s", (int)curr->name.span_size, curr->name.span);
+        printf("%.*s ", (int)curr->name.span_size, curr->name.span);
+
+        putchar(':');
+        print_typename(curr->type);
 
         curr = curr->next;
         if (curr != NULL) {

@@ -289,9 +289,10 @@ void free_ast_stmt(allocator_t* allocator, ast_stmt_node* node) {
     }
 }
 
-ast_param* make_ast_param(allocator_t* allocator, token name) {
+ast_param* make_ast_param(allocator_t* allocator, token name, ast_typename* type) {
     ast_param* p = ALLOC(allocator, ast_param);
     p->name = name;
+    p->type = type;
     p->next = NULL;
 
     return p;
@@ -315,6 +316,7 @@ static void free_params(allocator_t* allocator, ast_param* params) {
         ast_param* t = curr;
         curr = t->next;
 
+        free_ast_typename(allocator, t->type);
         FREE(allocator, t, ast_param);
     }
 }
