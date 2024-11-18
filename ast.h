@@ -134,6 +134,7 @@ typedef struct {
 typedef struct {
     struct _ast_stmt_node* body;
     ast_param* params;
+    ast_typename* return_type;
 } ast_node_lambda;
 
 typedef struct _ast_expr_node {
@@ -172,7 +173,10 @@ ast_expr_node* make_ast_call(
     allocator_t* allocator, ast_expr_node* function, vec_expr args
 );
 ast_expr_node* make_ast_lambda(
-    allocator_t* allocator, ast_param* params, ast_stmt_node* body
+    allocator_t* allocator,
+    ast_param* params,
+    ast_stmt_node* body,
+    ast_typename* return_type
 );
 
 void free_ast_expr(allocator_t* allocator, ast_expr_node* node);
@@ -329,6 +333,7 @@ typedef struct {
     token name;
     ast_param* params;
     ast_stmt_node* body;
+    ast_typename* return_type;
 } ast_node_function;
 
 typedef struct _ast_item_node {
@@ -340,9 +345,15 @@ typedef struct _ast_item_node {
     struct _ast_item_node* next;
 } ast_item_node;
 
-ast_param* make_ast_param(allocator_t* allocator, token name, ast_typename* type);
+ast_param* make_ast_param(
+    allocator_t* allocator, token name, ast_typename* type
+);
 ast_item_node* make_ast_function(
-    allocator_t* allocator, token name, ast_param* params, ast_stmt_node* body
+    allocator_t* allocator,
+    token name,
+    ast_param* params,
+    ast_stmt_node* body,
+    ast_typename* return_type
 );
 
 void free_ast_item(allocator_t* allocator, ast_item_node* node);

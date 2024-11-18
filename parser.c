@@ -258,6 +258,16 @@ static ast_item_node* function_decl(parser_t* parser) {
     ast_param* params_list = params(parser);
     expect(parser, TOK_PAREN_CLOSE, "expected a ')' after function params");
 
+    ast_typename* return_type = NULL;
+    if (match(parser, TOK_ARROW_RIGHT)) {
+        return_type = typename(parser);
+    } else {
+        // FIXME: we should set void/unit as the return type when explicit
+        // return type is missing
+        // since we don't currently have such typename, work around this by setting it to NULL
+        return_type = NULL;
+    }
+
     expect(parser, TOK_BRACE_OPEN, "expected function body");
 
     ast_stmt_node* body = NULL;
@@ -268,7 +278,7 @@ static ast_item_node* function_decl(parser_t* parser) {
         stmt_list_append(&body, &body_tail, curr);
     }
 
-    return make_ast_function(parser->allocator, name, params_list, body);
+    return make_ast_function(parser->allocator, name, params_list, body, return_type);
 }
 
 static ast_stmt_node* stmt(parser_t* parser) {
@@ -667,6 +677,15 @@ static ast_expr_node* lambda(parser_t* parser) {
     ast_param* params_list = params(parser);
     expect(parser, TOK_PAREN_CLOSE, "expected a ')' after function params");
 
+
+    ast_typename* return_type = NULL;
+    if (match(parser, TOK_ARROW_RIGHT)) {
+        return_type = typename(parser);
+    } else {
+        // FIXME: Set this to void/unit type instead.
+        return_type = NULL;
+    }
+
     expect(parser, TOK_BRACE_OPEN, "expected function body");
 
     ast_stmt_node* body = NULL;
@@ -677,7 +696,7 @@ static ast_expr_node* lambda(parser_t* parser) {
         stmt_list_append(&body, &body_tail, curr);
     }
 
-    return make_ast_lambda(parser->allocator, params_list, body);
+    return make_ast_lambda(parser->allocator, params_list, body, return_type);
 }
 
 ast_item_node* parse(allocator_t* allocator, char* src, size_t src_len) {

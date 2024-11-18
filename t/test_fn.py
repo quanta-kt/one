@@ -11,3 +11,8 @@ def test_fn():
 
     # trailing comma in param
     assert code2sexpr("fn a(b: number, c: number,) {}") == "(fn a (b :number c :number))"
+
+
+    assert code2sexpr("fn a() -> number {}") == "(fn a () :number)"
+    assert code2sexpr("fn a() -> boolean { b; c; }") == "(fn a () :boolean b c)"
+    assert code2sexpr("fn a(b: number, c: number) -> string { b; c; }") == "(fn a (b :number c :number) :string b c)"

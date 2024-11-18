@@ -204,6 +204,11 @@ static void walk_lambda(ast_expr_printer_t* _, ast_node_lambda* fn) {
     }
     putchar(')');
 
+    if (fn->return_type != NULL) {
+        printf(" :");
+        print_typename(fn->return_type);
+    }
+
     if (fn->body != NULL) putchar(' ');
     print_stmt(fn->body);
 
@@ -328,6 +333,11 @@ static void walk_function(ast_item_printer_t* self, ast_node_function* fn) {
         }
     }
     putchar(')');
+
+    if (fn->return_type != NULL) {
+        printf(" :");
+        print_typename(fn->return_type);
+    }
 
     if (fn->body != NULL) putchar(' ');
     print_stmt(fn->body);

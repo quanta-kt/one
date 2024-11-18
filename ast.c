@@ -123,13 +123,17 @@ ast_expr_node* make_ast_call(
 }
 
 ast_expr_node* make_ast_lambda(
-    allocator_t* allocator, ast_param* params, ast_stmt_node* body
+    allocator_t* allocator,
+    ast_param* params,
+    ast_stmt_node* body,
+    ast_typename* return_type
 ) {
     ast_expr_node* node = ALLOC(allocator, ast_expr_node);
     node->type = AST_LAMBDA;
     node->lambda = (ast_node_lambda){
         .body = body,
         .params = params,
+        .return_type = return_type,
     };
 
     return node;
@@ -161,6 +165,10 @@ void free_ast_expr(allocator_t* allocator, ast_expr_node* node) {
         case AST_LAMBDA: {
             free_ast_stmt(allocator, node->lambda.body);
             free_params(allocator, node->lambda.params);
+
+            if (node->lambda.return_type != NULL) {
+                free_ast_typename(allocator, node->lambda.return_type);
+            }
         }
     }
 
@@ -289,7 +297,9 @@ void free_ast_stmt(allocator_t* allocator, ast_stmt_node* node) {
     }
 }
 
-ast_param* make_ast_param(allocator_t* allocator, token name, ast_typename* type) {
+ast_param* make_ast_param(
+    allocator_t* allocator, token name, ast_typename* type
+) {
     ast_param* p = ALLOC(allocator, ast_param);
     p->name = name;
     p->type = type;
@@ -299,13 +309,18 @@ ast_param* make_ast_param(allocator_t* allocator, token name, ast_typename* type
 }
 
 ast_item_node* make_ast_function(
-    allocator_t* allocator, token name, ast_param* params, ast_stmt_node* body
+    allocator_t* allocator,
+    token name,
+    ast_param* params,
+    ast_stmt_node* body,
+    ast_typename* return_type
 ) {
     ast_item_node* node = ALLOC(allocator, ast_item_node);
     node->type = AST_FN;
     node->function.name = name;
     node->function.params = params;
     node->function.body = body;
+    node->function.return_type = return_type;
 
     return node;
 }
@@ -327,6 +342,11 @@ void free_ast_item(allocator_t* allocator, ast_item_node* node) {
             ast_param* curr = node->function.params;
             if (curr != NULL) {
                 free_params(allocator, node->function.params);
+            }
+
+            ast_typename* return_type = node->function.return_type;
+            if (return_type != NULL) {
+                free_ast_typename(allocator, return_type);
             }
 
             free_ast_stmt(allocator, node->function.body);
