@@ -115,7 +115,7 @@ void free_ast_expr(allocator_t* allocator, ast_expr_node* node) {
         }
 
         case AST_CALL: {
-            vec2_free(&node->call.args);
+            vec_free(&node->call.args);
             free_ast_expr(allocator, node->call.function);
             break;
         }

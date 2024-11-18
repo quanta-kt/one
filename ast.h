@@ -26,7 +26,7 @@ typedef enum {
 
 struct _ast_expr_node;
 
-typedef VEC2(struct _ast_expr_node*) vec_expr;
+typedef VEC(struct _ast_expr_node*) vec_expr;
 
 typedef struct {
     long double value;

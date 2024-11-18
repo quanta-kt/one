@@ -118,7 +118,7 @@ static void walk_call(ast_expr_printer_t* self, ast_node_call* node) {
     ast_expr_printer_t_walk(self, node->function);
 
     ast_expr_node** arg;
-    vec2_foreach(&node->args, arg) {
+    vec_foreach(&node->args, arg) {
         putchar(' ');
         ast_expr_printer_t_walk(self, *arg);
     }

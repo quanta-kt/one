@@ -461,11 +461,11 @@ static ast_expr_node* unary(parser_t* parser) {
 }
 
 static vec_expr arguments(parser_t* parser) {
-    vec_expr args = vec2_make(parser->allocator);
+    vec_expr args = vec_make(parser->allocator);
 
     while (!lex_eof(&parser->lexer) && peek(parser).type != TOK_PAREN_CLOSE) {
         ast_expr_node* arg = expr(parser);
-        vec2_push(&args, &arg);
+        vec_push(&args, &arg);
 
         if (!match(parser, TOK_COMMA)) {
             break;
