@@ -2,8 +2,6 @@
 
 #include <string.h>
 
-#define VEC_INITIAL_SIZE 8
-
 void vec_free(vec* v) {
     FREE_ARRAY(v->allocator, v->items, uint8_t, v->item_size * v->capacity);
 
