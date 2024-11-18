@@ -24,7 +24,7 @@ def stmt2sexpr(stmt: str) -> str:
     code = template.format(stmt)
     sexpr = code2sexpr(code)
 
-    prefix = "(fn main () "
+    prefix = "(fn main () :() "
     suffix = ")"
 
     return sexpr[len(prefix) : -len(suffix)]
