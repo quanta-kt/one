@@ -26,6 +26,8 @@ typedef enum {
 
 struct _ast_expr_node;
 
+typedef VEC2(struct _ast_expr_node*) vec_expr;
+
 typedef struct {
     long double value;
 } ast_node_num;
@@ -62,7 +64,7 @@ typedef struct {
 
 typedef struct {
     struct _ast_expr_node* function;
-    vec args;  //  vec of struct _ast_expr_node*
+    vec_expr args;  //  vec of struct _ast_expr_node*
 } ast_node_call;
 
 typedef struct {
@@ -103,7 +105,7 @@ ast_expr_node* make_ast_unary(
     allocator_t* allocator, token_type op, ast_expr_node* expr
 );
 ast_expr_node* make_ast_call(
-    allocator_t* allocator, ast_expr_node* function, vec args
+    allocator_t* allocator, ast_expr_node* function, vec_expr args
 );
 ast_expr_node* make_ast_lambda(
     allocator_t* allocator, ast_param* params, ast_stmt_node* body

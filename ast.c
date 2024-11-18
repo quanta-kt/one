@@ -72,7 +72,7 @@ ast_expr_node* make_ast_unary(
 }
 
 ast_expr_node* make_ast_call(
-    allocator_t* allocator, ast_expr_node* function, vec args
+    allocator_t* allocator, ast_expr_node* function, vec_expr args
 ) {
     ast_expr_node* node = ALLOC(allocator, ast_expr_node);
     node->type = AST_CALL;
@@ -115,7 +115,7 @@ void free_ast_expr(allocator_t* allocator, ast_expr_node* node) {
         }
 
         case AST_CALL: {
-            vec_free(&node->call.args);
+            vec2_free(&node->call.args);
             free_ast_expr(allocator, node->call.function);
             break;
         }

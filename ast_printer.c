@@ -118,7 +118,7 @@ static void walk_call(ast_expr_printer_t* self, ast_node_call* node) {
     ast_expr_printer_t_walk(self, node->function);
 
     ast_expr_node** arg;
-    foreach_vec_item(&node->args, ast_expr_node*, arg) {
+    vec2_foreach(&node->args, arg) {
         putchar(' ');
         ast_expr_printer_t_walk(self, *arg);
     }
@@ -142,7 +142,7 @@ static void walk_lambda(ast_expr_printer_t* _, ast_node_lambda* fn) {
     while (curr != NULL) {
         printf("%.*s", (int)curr->name.span_size, curr->name.span);
         curr = curr->next;
-        
+
         if (curr != NULL) {
             putchar(' ');
         }
