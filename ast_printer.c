@@ -85,6 +85,10 @@ static char* op2str(token_type tt) {
     char* op = "?";
 
     switch (tt) {
+        case TOK_ASSIGN:
+            op = "=";
+            break;
+
         case TOK_DIV:
             op = "/";
             break;

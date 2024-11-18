@@ -31,6 +31,7 @@ static ast_stmt_node* while_(parser_t* parser);
 static ast_stmt_node* expr_stmt(parser_t* parser);
 
 static ast_expr_node* expr(parser_t* parser);
+static ast_expr_node* assign(parser_t* parser);
 static ast_expr_node* or_op(parser_t* parser);
 static ast_expr_node* and_op(parser_t* parser);
 static ast_expr_node* bitwise_or(parser_t* parser);
@@ -275,7 +276,13 @@ static ast_item_node* function_decl(parser_t* parser) {
         stmt_list_append(&body, &body_tail, curr);
     }
 
-    return make_ast_function(parser->allocator, name, params_list, body, return_type);
+    return make_ast_function(
+        parser->allocator,
+        name,
+        params_list,
+        body,
+        return_type
+    );
 }
 
 static ast_stmt_node* stmt(parser_t* parser) {
@@ -396,7 +403,23 @@ static ast_stmt_node* expr_stmt(parser_t* parser) {
     return node;
 }
 
-static ast_expr_node* expr(parser_t* parser) { return or_op(parser); }
+static ast_expr_node* expr(parser_t* parser) { return assign(parser); }
+
+static ast_expr_node* assign(parser_t* parser) {
+    ast_expr_node* left = or_op(parser);
+
+    while (!lex_eof(&parser->lexer) && match(parser, TOK_ASSIGN)) {
+        if (left->type != AST_IDEN) {
+            __die("can only assign to identifiers");
+        }
+
+        ast_expr_node* right = assign(parser);
+
+        left = make_ast_binary(parser->allocator, TOK_ASSIGN, left, right);
+    }
+
+    return left;
+}
 
 static ast_expr_node* or_op(parser_t* parser) {
     ast_expr_node* left = and_op(parser);
@@ -673,7 +696,6 @@ static ast_expr_node* lambda(parser_t* parser) {
     expect(parser, TOK_PAREN_OPEN, "expected a '(' after function name");
     ast_param* params_list = params(parser);
     expect(parser, TOK_PAREN_CLOSE, "expected a ')' after function params");
-
 
     ast_typename* return_type;
     if (match(parser, TOK_ARROW_RIGHT)) {
