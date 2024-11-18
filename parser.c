@@ -17,6 +17,9 @@ typedef struct {
     ast_item_node* item_tail;
 } parser_t;
 
+static ast_typename* function_typename(parser_t* parser);
+static ast_typename* typename(parser_t* parser);
+
 static ast_item_node* item(parser_t* parser);
 static ast_item_node* function_decl(parser_t* parser);
 
@@ -172,6 +175,50 @@ static token expect(parser_t* parser, token_type tt, char const* message) {
     return parser->prev;
 }
 
+static ast_typename* function_typename(parser_t* parser) {
+    expect(parser, TOK_PAREN_OPEN, "expected '(' after 'fn'");
+
+    vec_typename params = vec_make(parser->allocator);
+
+    while (!lex_eof(&parser->lexer) && !match(parser, TOK_PAREN_CLOSE)) {
+        ast_typename* param = typename(parser);
+        vec_push(&params, &param);
+
+        if (!match(parser, TOK_COMMA)) {
+            advance(parser);  // ')' handled below
+            break;
+        }
+    }
+
+    if (parser->prev.type != TOK_PAREN_CLOSE) {
+        __die("EOF while parsing function type params");
+    }
+
+    expect(
+        parser,
+        TOK_ARROW_RIGHT,
+        "expected '->' before return type of function type"
+    );
+
+    ast_typename* return_type = typename(parser);
+
+    return make_ast_typename_function(parser->allocator, params, return_type);
+}
+
+static ast_typename* typename(parser_t* parser) {
+    if (match(parser, TOK_KW_BOOLEAN)) {
+        return make_ast_typename(parser->allocator, TYPE_NAME_BOOLEAN);
+    } else if (match(parser, TOK_KW_NUMBER)) {
+        return make_ast_typename(parser->allocator, TYPE_NAME_NUMBER);
+    } else if (match(parser, TOK_KW_STRING)) {
+        return make_ast_typename(parser->allocator, TYPE_NAME_STRING);
+    } else if (match(parser, TOK_FN)) {
+        return function_typename(parser);
+    } else {
+        __die("expected a type");
+    }
+}
+
 static ast_item_node* item(parser_t* parser) {
     if (match(parser, TOK_FN)) {
         return function_decl(parser);
@@ -260,11 +307,16 @@ static ast_stmt_node* var_decl(parser_t* parser) {
             : "expected identifier after 'let'"
     );
 
+    ast_typename* type = NULL;
+    if (match(parser, TOK_COLON)) {
+        type = typename(parser);
+    }
+
     ast_expr_node* value = match(parser, TOK_ASSIGN) ? expr(parser) : NULL;
 
     expect(parser, TOK_SEMI, "expected ';' after variable declaration");
 
-    return make_ast_var_decl(parser->allocator, name, value, mut);
+    return make_ast_var_decl(parser->allocator, name, type, value, mut);
 }
 
 static ast_stmt_node* block(parser_t* parser) {
