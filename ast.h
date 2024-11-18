@@ -43,13 +43,15 @@ ast_typename* make_ast_typename_function(
 
 void free_ast_typename(allocator_t* allocator, ast_typename* node);
 
-#define AST_TYPENAME_WALKER(name, return_type)                                      \
+#define AST_TYPENAME_WALKER(name, return_type, ctx_type)                            \
     struct _##name;                                                                 \
     typedef struct _##name {                                                        \
         return_type (*walk_number_type)(struct _##name*, ast_typename_number*);     \
         return_type (*walk_string_type)(struct _##name*, ast_typename_string*);     \
         return_type (*walk_boolean_type)(struct _##name*, ast_typename_boolean*);   \
         return_type (*walk_function_type)(struct _##name*, ast_typename_function*); \
+                                                                                    \
+        ctx_type ctx;                                                               \
     } name;                                                                         \
                                                                                     \
     return_type name##_walk(name* walker, ast_typename* node) {                     \
@@ -181,7 +183,7 @@ ast_expr_node* make_ast_lambda(
 
 void free_ast_expr(allocator_t* allocator, ast_expr_node* node);
 
-#define AST_EXPR_WALKER(name, return_type)                               \
+#define AST_EXPR_WALKER(name, return_type, ctx_type)                     \
     struct _##name;                                                      \
     typedef struct _##name {                                             \
         return_type (*walk_binary)(struct _##name*, ast_node_binary*);   \
@@ -192,6 +194,8 @@ void free_ast_expr(allocator_t* allocator, ast_expr_node* node);
         return_type (*walk_str)(struct _##name*, ast_node_str*);         \
         return_type (*walk_bool)(struct _##name*, ast_node_bool*);       \
         return_type (*walk_lambda)(struct _##name*, ast_node_lambda*);   \
+                                                                         \
+        ctx_type ctx;                                                    \
     } name;                                                              \
                                                                          \
     return_type name##_walk(name* walker, ast_expr_node* node) {         \
@@ -292,7 +296,7 @@ ast_stmt_node* make_ast_while(
 
 void free_ast_stmt(allocator_t* allocator, ast_stmt_node* node);
 
-#define AST_STMT_WALKER(name, return_type)                                   \
+#define AST_STMT_WALKER(name, return_type, ctx_type)                         \
     struct _##name;                                                          \
     typedef struct _##name {                                                 \
         return_type (*walk_expr_stmt)(struct _##name*, ast_node_expr_stmt*); \
@@ -300,6 +304,8 @@ void free_ast_stmt(allocator_t* allocator, ast_stmt_node* node);
         return_type (*walk_block)(struct _##name*, ast_node_block*);         \
         return_type (*walk_if_else)(struct _##name*, ast_node_if_else*);     \
         return_type (*walk_while)(struct _##name*, ast_node_while*);         \
+                                                                             \
+        ctx_type ctx;                                                        \
     } name;                                                                  \
                                                                              \
     return_type name##_walk(name* walker, ast_stmt_node* node) {             \
@@ -358,10 +364,12 @@ ast_item_node* make_ast_function(
 
 void free_ast_item(allocator_t* allocator, ast_item_node* node);
 
-#define AST_ITEM_WALKER(name, return_type)                                 \
+#define AST_ITEM_WALKER(name, return_type, ctx_type)                       \
     struct _##name;                                                        \
     typedef struct _##name {                                               \
         return_type (*walk_function)(struct _##name*, ast_node_function*); \
+                                                                           \
+        ctx_type ctx;                                                      \
     } name;                                                                \
                                                                            \
     return_type name##_walk(name* walker, ast_item_node* node) {           \

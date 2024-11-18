@@ -4,13 +4,16 @@
 
 #include "ast.h"
 
-AST_TYPENAME_WALKER(ast_typename_printer_t, void)
+typedef struct {
+} empty_ctx;
 
-AST_EXPR_WALKER(ast_expr_printer_t, void)
+AST_TYPENAME_WALKER(ast_typename_printer_t, void, empty_ctx)
 
-AST_STMT_WALKER(ast_stmt_printer_t, void)
+AST_EXPR_WALKER(ast_expr_printer_t, void, empty_ctx)
 
-AST_ITEM_WALKER(ast_item_printer_t, void)
+AST_STMT_WALKER(ast_stmt_printer_t, void, empty_ctx)
+
+AST_ITEM_WALKER(ast_item_printer_t, void, empty_ctx)
 
 static void walk_boolean_type(
     ast_typename_printer_t* _self, ast_typename_boolean* _node
@@ -33,14 +36,13 @@ static void walk_string_type(
 static void walk_function_type(
     ast_typename_printer_t* self, ast_typename_function* node
 ) {
-
     printf("(fn(");
 
     ast_typename** param;
     vec_foreach(&node->params, param) {
         ast_typename_printer_t_walk(self, *param);
 
-        if (i < node->params.len - 1)  {
+        if (i < node->params.len - 1) {
             putchar(' ');
         }
     }
@@ -198,6 +200,7 @@ static void walk_lambda(ast_expr_printer_t* _, ast_node_lambda* fn) {
         print_typename(curr->type);
 
         curr = curr->next;
+
         if (curr != NULL) {
             putchar(' ');
         }
