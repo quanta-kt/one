@@ -9,7 +9,6 @@ SRCS += ast_printer.c
 SRCS += lex.c
 SRCS += main.c
 SRCS += parser.c
-SRCS += vec.c
 
 HEADERS += alloc.h
 HEADERS += ast.h
