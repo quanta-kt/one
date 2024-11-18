@@ -4,11 +4,63 @@
 
 #include "ast.h"
 
+AST_TYPENAME_WALKER(ast_typename_printer_t, void)
+
 AST_EXPR_WALKER(ast_expr_printer_t, void)
 
 AST_STMT_WALKER(ast_stmt_printer_t, void)
 
 AST_ITEM_WALKER(ast_item_printer_t, void)
+
+static void walk_boolean_type(
+    ast_typename_printer_t* _self, ast_typename_boolean* _node
+) {
+    printf("boolean");
+}
+
+static void walk_number_type(
+    ast_typename_printer_t* _self, ast_typename_number* _node
+) {
+    printf("number");
+};
+
+static void walk_string_type(
+    ast_typename_printer_t* _self, ast_typename_string* _node
+) {
+    printf("string");
+};
+
+static void walk_function_type(
+    ast_typename_printer_t* self, ast_typename_function* node
+) {
+
+    printf("(fn(");
+
+    ast_typename** param;
+    vec_foreach(&node->params, param) {
+        ast_typename_printer_t_walk(self, *param);
+
+        if (i < node->params.len - 1)  {
+            putchar(' ');
+        }
+    }
+
+    printf(") ");
+
+    ast_typename_printer_t_walk(self, node->return_type);
+
+    putchar(')');
+}
+
+static void print_typename(ast_typename* node) {
+    ast_typename_printer_t printer = (ast_typename_printer_t){
+        .walk_boolean_type = walk_boolean_type,
+        .walk_number_type = walk_number_type,
+        .walk_string_type = walk_string_type,
+        .walk_function_type = walk_function_type,
+    };
+    ast_typename_printer_t_walk(&printer, node);
+}
 
 static void print_stmt(ast_stmt_node* node);
 
@@ -178,6 +230,13 @@ static void walk_var_decl(ast_stmt_printer_t* self, ast_node_var_decl* node) {
     char* op = node->mut ? "let-mut" : "let";
 
     printf("(%s %.*s ", op, (int)node->name.span_size, node->name.span);
+
+    if (node->typename != NULL) {
+        putchar(':');
+        print_typename(node->typename);
+        putchar(' ');
+    }
+
     if (node->value == NULL) {
         printf("NULL");
     } else {
