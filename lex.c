@@ -28,6 +28,9 @@ keyword keyword_table[] = {
     TABLE_ENTRY(TOK_RETURN, "return"),
     TABLE_ENTRY(TOK_LET, "async"),
     TABLE_ENTRY(TOK_LET, "await"),
+    TABLE_ENTRY(TOK_KW_NUMBER, "number"),
+    TABLE_ENTRY(TOK_KW_STRING, "string"),
+    TABLE_ENTRY(TOK_KW_BOOLEAN, "boolean"),
 };
 
 const size_t keyword_table_len =
@@ -154,8 +157,14 @@ token_result lex_advance(lexer_t* lex) {
     switch (c) {
         case '+':
             return SINGLE(TOK_PLUS);
-        case '-':
+        case '-': {
+            if (lex->curr[1] == '>') {
+                lex->curr += 2;
+                return token_ok(make_token(TOK_ARROW_RIGHT, lex->curr, 2));
+            }
+
             return SINGLE(TOK_MINUS);
+        }
         case '/':
             return SINGLE(TOK_DIV);
         case '*':

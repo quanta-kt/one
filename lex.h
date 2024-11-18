@@ -60,6 +60,12 @@ typedef enum {
     TOK_COMMA,
     TOK_SEMI,
 
+    TOK_ARROW_RIGHT,  // ->
+
+    TOK_KW_NUMBER,
+    TOK_KW_STRING,
+    TOK_KW_BOOLEAN,
+
     TOK_EOF,
 } token_type;
 
