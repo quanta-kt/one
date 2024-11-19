@@ -9,7 +9,7 @@
 
 #define VEC_INITIAL_SIZE 8
 
-#define VEC(item_type)         \
+#define VEC(item_type)          \
     struct {                    \
         item_type* items;       \
         size_t len;             \
@@ -19,7 +19,7 @@
 
 #define vec_make(allocator) {NULL, 0, 0, allocator}
 
-#define vec_free(v)               \
+#define vec_free(v)                \
     do {                           \
         FREE_ARRAY(                \
             (v)->allocator,        \
@@ -29,7 +29,7 @@
         );                         \
     } while (0)
 
-#define vec_push(v, item)                                                 \
+#define vec_push(v, item)                                                  \
     do {                                                                   \
         if ((v)->len == (v)->capacity) {                                   \
             size_t new_capacity =                                          \
@@ -46,14 +46,14 @@
         }                                                                  \
                                                                            \
         typeof(item) ptr = (v)->items + (v)->len++;                        \
-        memcpy(ptr, item, sizeof(item));                                   \
+        memcpy(ptr, item, sizeof(*item));                                  \
                                                                            \
     } while (0);
 
 #define vec_get(v, inx) inx >= v->len ? NULL : &v->items[inx]
 
 #define vec_foreach(v, item) \
-    item = (v)->items;        \
+    item = (v)->items;       \
     for (size_t i = 0; i < (v)->len; i++, (item)++)
 
 #endif  // VEC_H
