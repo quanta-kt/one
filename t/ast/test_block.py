@@ -1,14 +1,8 @@
 from lib import stmt2sexpr
 
 
-# FIXME: get rid of this once onec is able to read multiline statements
-def _(code: str) -> str:
-    return " ".join(code.split("\n"))
-
-
 def test_blocks_can_nest():
-    code = _(
-        """
+    code = """
     {
         {
             let a = 0;
@@ -29,7 +23,6 @@ def test_blocks_can_nest():
         }
     }
     """
-    )
 
     expected = (
         "(block "
