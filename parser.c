@@ -199,13 +199,12 @@ static ast_typename* function_typename(parser_t* parser) {
         __die("EOF while parsing function type params");
     }
 
-    expect(
-        parser,
-        TOK_ARROW_RIGHT,
-        "expected '->' before return type of function type"
-    );
-
-    ast_typename* return_type = typename(parser);
+    ast_typename* return_type;
+    if (match(parser, TOK_ARROW_RIGHT)) {
+        return_type = typename(parser);
+    } else {
+        return_type = make_ast_typename(parser->allocator, TYPE_NAME_UNIT);
+    }
 
     return make_ast_typename_function(parser->allocator, params, return_type);
 }

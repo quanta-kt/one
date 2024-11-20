@@ -3,6 +3,9 @@ from lib import stmt2sexpr
 def test_type_annotation():
     assert stmt2sexpr("let a: fn() -> ();") == "(let a :(fn() ()) NULL)"
 
+    # default return type is unit
+    assert stmt2sexpr("let a: fn();") == "(let a :(fn() ()) NULL)"
+
 
 def test_call():
     assert stmt2sexpr("fn() {};") == "(fn () :())"
