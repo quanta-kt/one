@@ -337,6 +337,10 @@ static void free_params(allocator_t* allocator, ast_param* params) {
 }
 
 void free_ast_item(allocator_t* allocator, ast_item_node* node) {
+    // An empty AST is represented by a NULL pointer,
+    // freeing is no-op in that case.
+    if (node == NULL) return;
+
     switch (node->type) {
         case AST_FN: {
             ast_param* curr = node->function.params;
