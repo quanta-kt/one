@@ -8,6 +8,7 @@ SRCS += ast.c
 SRCS += ast_printer.c
 SRCS += lex.c
 SRCS += main.c
+SRCS += typecheck.c
 SRCS += parser.c
 
 HEADERS += alloc.h
@@ -15,6 +16,7 @@ HEADERS += ast.h
 HEADERS += ast_printer.h
 HEADERS += lex.h
 HEADERS += parser.h
+HEADERS += typecheck.h
 HEADERS += vec.h
 
 OBJS = $(patsubst %.c, build/%.o, $(SRCS))
@@ -43,6 +45,7 @@ PYTHON = python3
 export PYTHONPATH = t
 
 TEST_FILES += $(TEST_DIR)/ast
+TEST_FILES += $(TEST_DIR)/typecheck
 
 test: $(OUTPUT)
 	$(PYTHON) -m pytest $(TEST_FILES)
