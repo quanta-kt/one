@@ -35,3 +35,20 @@ def stmt2sexpr(stmt: str) -> str:
     suffix = ")"
 
     return sexpr[len(prefix) : -len(suffix)]
+
+
+def typecheck_passes(code: str) -> bool:
+    """
+    Invokes onec for typechecking, returns true if code passes type-check.
+    """
+
+    proc = subprocess.Popen(
+        ["onec", "--typecheck-only"],
+        stdout=subprocess.PIPE,
+        stdin=subprocess.PIPE,
+    )
+
+    proc.stdin.write(f"{code}\n".encode())
+    proc.stdin.close()
+
+    return proc.wait() == 0
