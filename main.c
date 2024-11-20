@@ -6,6 +6,7 @@
 #include "ast.h"
 #include "ast_printer.h"
 #include "parser.h"
+#include "typecheck.h"
 
 /*
  * Only parse code and transpile it into an s-expression,
@@ -14,8 +15,15 @@
 static const char* OPT_PRINT_S_EXPR = "--s-expr";
 static const char* OPT_PRINT_S_EXPR_SHORT = "-S";
 
+/*
+ * Only run typechecking, do not compile or execute.
+ */
+static const char* OPT_TYPECHECK_ONLY = "--typecheck-only";
+static const char* OPT_TYPECHECK_ONLY_SHORT = "-t";
+
 struct compiler_args {
     int print_sexpr : 1;
+    int typecheck_only : 1;
     char* path;
 };
 
@@ -45,6 +53,9 @@ struct compiler_args parse_args(int argc, char** argv) {
         if (strcmp(arg, OPT_PRINT_S_EXPR) == 0 ||
             strcmp(arg, OPT_PRINT_S_EXPR_SHORT) == 0) {
             ret.print_sexpr = 1;
+        } else if (strcmp(arg, OPT_TYPECHECK_ONLY) == 0 ||
+                   strcmp(arg, OPT_TYPECHECK_ONLY_SHORT) == 0) {
+            ret.typecheck_only = 1;
         } else if (memcmp(arg, "--", sizeof("--")) == 0 || arg[0] == '-') {
             fprintf(stderr, "Invalid flag: '%s'\n", arg);
             print_usage_and_die(exec);
@@ -83,7 +94,7 @@ size_t read_all(FILE* in, char** ptr) {
     return len;
 }
 
-int run_repl(int print_sexpr) {
+int run_repl(struct compiler_args* args) {
     char* line;
     size_t len;
 
@@ -92,11 +103,15 @@ int run_repl(int print_sexpr) {
     while (getline(&line, &len, stdin) != -1) {
         ast_item_node* ast = parse(allocator, line, len);
 
-        if (print_sexpr) {
+        if (args->print_sexpr) {
             print_ast(ast);
-        } else {
-            fprintf(stderr, "NOT IMPLEMENTED: Code execution is WIP.\n");
-            exit(1);
+        }
+
+        if (typecheck(allocator, ast)) {
+            if (!args->typecheck_only && !args->print_sexpr) {
+                fprintf(stderr, "NOT IMPLEMENTED: Code execution is WIP.\n");
+                exit(1);
+            }
         }
 
         free_ast_item(allocator, ast);
@@ -105,22 +120,35 @@ int run_repl(int print_sexpr) {
     return 0;
 }
 
-int print_sexpr(FILE* file) {
+int compile_file(struct compiler_args* args, FILE* file) {
+    int ret = 0;
+
     char* buf;
     size_t len = read_all(file, &buf);
 
     allocator_t* allocator = gpa();
 
     ast_item_node* ast = parse(allocator, buf, len);
-    print_ast(ast);
 
+    if (args->print_sexpr) {
+        print_ast(ast);
+    }
+
+    if (!typecheck(allocator, ast)) {
+        ret = 1;
+        goto cleanup;
+    }
+
+    if (!args->typecheck_only && !args->print_sexpr) {
+        fprintf(stderr, "NOT IMPLEMENTED: Code execution is WIP.\n");
+        ret = 2;
+    }
+
+cleanup:
     free_ast_item(allocator, ast);
     free(buf);
-    return 0;
-}
 
-void compile_file() {
-    fprintf(stderr, "NOT IMPLEMENTED: Compiling a file is WIP.\n");
+    return ret;
 }
 
 FILE* open_file_or_die(char* path) {
@@ -141,12 +169,9 @@ int main(int argc, char** argv) {
     FILE* in = args.path == NULL ? stdin : open_file_or_die(args.path);
 
     if (in == stdin && isatty(STDIN_FILENO)) {
-        ret = run_repl(args.print_sexpr);
-    } else if (args.print_sexpr) {
-        ret = print_sexpr(in);
+        ret = run_repl(&args);
     } else {
-        compile_file();
-        ret = 1;
+        ret = compile_file(&args, in);
     }
 
     if (in != stdin) {
