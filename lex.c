@@ -102,6 +102,8 @@ static token token_iden(lexer_t* lex) {
     return make_token(tt, start, len);
 }
 
+static bool lex_eof(lexer_t* lex) { return *lex->curr == '\0'; }
+
 static token_result token_str(lexer_t* lex) {
     char* start = lex->curr;
 
@@ -133,8 +135,6 @@ lexer_t make_lexer(char* src, size_t size) {
         .size = size,
     };
 }
-
-bool lex_eof(lexer_t* lex) { return *lex->curr == '\0'; }
 
 token_result lex_advance(lexer_t* lex) {
 #define SINGLE(tt) (token_ok(make_token(tt, lex->curr++, 1)))

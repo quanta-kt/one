@@ -185,7 +185,7 @@ static ast_typename* function_typename(parser_t* parser) {
 
     vec_typename params = vec_make(parser->allocator);
 
-    while (!lex_eof(&parser->lexer) && !match(parser, TOK_PAREN_CLOSE)) {
+    while (!is_eof(parser) && !match(parser, TOK_PAREN_CLOSE)) {
         ast_typename* param = typename(parser);
         vec_push(&params, &param);
 
@@ -236,7 +236,7 @@ static ast_param* params(parser_t* parser) {
     ast_param* head = NULL;
     ast_param* tail = NULL;
 
-    while (!lex_eof(&parser->lexer) && peek(parser).type != TOK_PAREN_CLOSE) {
+    while (!is_eof(parser) && peek(parser).type != TOK_PAREN_CLOSE) {
         token param_name =
             expect(parser, TOK_IDEN, "expected a parameter name");
 
@@ -275,7 +275,7 @@ static ast_item_node* function_decl(parser_t* parser) {
     ast_stmt_node* body = NULL;
     ast_stmt_node* body_tail = NULL;
 
-    while (!lex_eof(&parser->lexer) && !match(parser, TOK_BRACE_CLOSE)) {
+    while (!is_eof(parser) && !match(parser, TOK_BRACE_CLOSE)) {
         ast_stmt_node* curr = stmt(parser);
         stmt_list_append(&body, &body_tail, curr);
     }
@@ -412,7 +412,7 @@ static ast_expr_node* expr(parser_t* parser) { return assign(parser); }
 static ast_expr_node* assign(parser_t* parser) {
     ast_expr_node* left = or_op(parser);
 
-    while (!lex_eof(&parser->lexer) && match(parser, TOK_ASSIGN)) {
+    while (!is_eof(parser) && match(parser, TOK_ASSIGN)) {
         if (left->type != AST_IDEN) {
             __die("can only assign to identifiers");
         }
@@ -428,7 +428,7 @@ static ast_expr_node* assign(parser_t* parser) {
 static ast_expr_node* or_op(parser_t* parser) {
     ast_expr_node* left = and_op(parser);
 
-    while (!lex_eof(&parser->lexer) && match(parser, TOK_OR)) {
+    while (!is_eof(parser) && match(parser, TOK_OR)) {
         ast_expr_node* right = and_op(parser);
         left = make_ast_binary(parser->allocator, TOK_OR, left, right);
     }
@@ -439,7 +439,7 @@ static ast_expr_node* or_op(parser_t* parser) {
 static ast_expr_node* and_op(parser_t* parser) {
     ast_expr_node* left = bitwise_or(parser);
 
-    while (!lex_eof(&parser->lexer) && match(parser, TOK_AND)) {
+    while (!is_eof(parser) && match(parser, TOK_AND)) {
         ast_expr_node* right = bitwise_or(parser);
         left = make_ast_binary(parser->allocator, TOK_AND, left, right);
     }
@@ -450,7 +450,7 @@ static ast_expr_node* and_op(parser_t* parser) {
 static ast_expr_node* bitwise_or(parser_t* parser) {
     ast_expr_node* left = bitwise_xor(parser);
 
-    while (!lex_eof(&parser->lexer) && match(parser, TOK_PIPE)) {
+    while (!is_eof(parser) && match(parser, TOK_PIPE)) {
         ast_expr_node* right = bitwise_xor(parser);
         left = make_ast_binary(parser->allocator, TOK_PIPE, left, right);
     }
@@ -461,7 +461,7 @@ static ast_expr_node* bitwise_or(parser_t* parser) {
 static ast_expr_node* bitwise_xor(parser_t* parser) {
     ast_expr_node* left = bitwise_and(parser);
 
-    while (!lex_eof(&parser->lexer) && match(parser, TOK_CARET)) {
+    while (!is_eof(parser) && match(parser, TOK_CARET)) {
         ast_expr_node* right = bitwise_and(parser);
         left = make_ast_binary(parser->allocator, TOK_CARET, left, right);
     }
@@ -472,7 +472,7 @@ static ast_expr_node* bitwise_xor(parser_t* parser) {
 static ast_expr_node* bitwise_and(parser_t* parser) {
     ast_expr_node* left = equality(parser);
 
-    while (!lex_eof(&parser->lexer) && match(parser, TOK_AMP)) {
+    while (!is_eof(parser) && match(parser, TOK_AMP)) {
         ast_expr_node* right = equality(parser);
         left = make_ast_binary(parser->allocator, TOK_AMP, left, right);
     }
@@ -483,8 +483,8 @@ static ast_expr_node* bitwise_and(parser_t* parser) {
 static ast_expr_node* equality(parser_t* parser) {
     ast_expr_node* left = comparision(parser);
 
-    while (!lex_eof(&parser->lexer) &&
-           (match(parser, TOK_EQ) || match(parser, TOK_NEQ))) {
+    while (!is_eof(parser) && (match(parser, TOK_EQ) || match(parser, TOK_NEQ))
+    ) {
         token op = parser->prev;
 
         ast_expr_node* right = comparision(parser);
@@ -497,7 +497,7 @@ static ast_expr_node* equality(parser_t* parser) {
 static ast_expr_node* comparision(parser_t* parser) {
     ast_expr_node* left = term(parser);
 
-    while (!lex_eof(&parser->lexer) &&
+    while (!is_eof(parser) &&
            (match(parser, TOK_GT) || match(parser, TOK_GTEQ) ||
             match(parser, TOK_LT) || match(parser, TOK_LTEQ))) {
         token op = parser->prev;
@@ -512,7 +512,7 @@ static ast_expr_node* comparision(parser_t* parser) {
 static ast_expr_node* term(parser_t* parser) {
     ast_expr_node* left = factor(parser);
 
-    while (!lex_eof(&parser->lexer) &&
+    while (!is_eof(parser) &&
            (match(parser, TOK_PLUS) || match(parser, TOK_MINUS))) {
         token op = parser->prev;
 
@@ -526,7 +526,7 @@ static ast_expr_node* term(parser_t* parser) {
 static ast_expr_node* factor(parser_t* parser) {
     ast_expr_node* left = unary(parser);
 
-    while (!lex_eof(&parser->lexer) &&
+    while (!is_eof(parser) &&
            (match(parser, TOK_MUL) || match(parser, TOK_DIV) ||
             match(parser, TOK_PERC))) {
         token op = parser->prev;
@@ -552,7 +552,7 @@ static ast_expr_node* unary(parser_t* parser) {
 static vec_expr arguments(parser_t* parser) {
     vec_expr args = vec_make(parser->allocator);
 
-    while (!lex_eof(&parser->lexer) && peek(parser).type != TOK_PAREN_CLOSE) {
+    while (!is_eof(parser) && peek(parser).type != TOK_PAREN_CLOSE) {
         ast_expr_node* arg = expr(parser);
         vec_push(&args, &arg);
 
@@ -713,7 +713,7 @@ static ast_expr_node* lambda(parser_t* parser) {
     ast_stmt_node* body = NULL;
     ast_stmt_node* body_tail = NULL;
 
-    while (!lex_eof(&parser->lexer) && !match(parser, TOK_BRACE_CLOSE)) {
+    while (!is_eof(parser) && !match(parser, TOK_BRACE_CLOSE)) {
         ast_stmt_node* curr = stmt(parser);
         stmt_list_append(&body, &body_tail, curr);
     }

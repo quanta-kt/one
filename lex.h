@@ -103,7 +103,6 @@ typedef struct {
 } lexer_t;
 
 lexer_t make_lexer(char* src, size_t size);
-bool lex_eof(lexer_t* lex);
 token_result lex_advance();
 
 #endif  // LEX_H
