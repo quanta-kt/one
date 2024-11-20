@@ -210,6 +210,14 @@ static ast_typename* function_typename(parser_t* parser) {
     return make_ast_typename_function(parser->allocator, params, return_type);
 }
 
+static ast_typename* typename_tuple(parser_t* parser) {
+    // FIXME: tuple syntax is not implemented yet,
+    // this exists only to be able to parse unit-type name '()'
+    expect(parser, TOK_PAREN_CLOSE, "Expected a ')'");
+
+    return make_ast_typename(parser->allocator, TYPE_NAME_UNIT);
+}
+
 static ast_typename* typename(parser_t* parser) {
     if (match(parser, TOK_KW_BOOLEAN)) {
         return make_ast_typename(parser->allocator, TYPE_NAME_BOOLEAN);
@@ -217,6 +225,8 @@ static ast_typename* typename(parser_t* parser) {
         return make_ast_typename(parser->allocator, TYPE_NAME_NUMBER);
     } else if (match(parser, TOK_KW_STRING)) {
         return make_ast_typename(parser->allocator, TYPE_NAME_STRING);
+    } else if (match(parser, TOK_PAREN_OPEN)) {
+        return typename_tuple(parser);
     } else if (match(parser, TOK_FN)) {
         return function_typename(parser);
     } else {
