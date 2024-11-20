@@ -144,6 +144,10 @@ static token advance(parser_t* parser) {
     return res.t;
 }
 
+static inline bool is_eof(parser_t* parser) {
+    return parser->curr.type == TOK_EOF;
+}
+
 static inline token peek(parser_t* parser) { return parser->curr; }
 
 /*
@@ -721,9 +725,9 @@ ast_item_node* parse(allocator_t* allocator, char* src, size_t src_len) {
     parser_t parser = make_parser(allocator, make_lexer(src, src_len));
     advance(&parser);
 
-    do {
+    while (!is_eof(&parser)) {
         insert_item(&parser, item(&parser));
-    } while (!lex_eof(&parser.lexer));
+    }
 
     return parser.item_head;
 }
