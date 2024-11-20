@@ -38,14 +38,11 @@ build/%.o: %.c $(HEADERS)
 
 TEST_DIR = t
 PYTHON = python3
-TEST_FILES += $(TEST_DIR)/test_expr.py
-TEST_FILES += $(TEST_DIR)/test_block.py
-TEST_FILES += $(TEST_DIR)/test_if.py
-TEST_FILES += $(TEST_DIR)/test_var_decl.py
-TEST_FILES += $(TEST_DIR)/test_while.py
-TEST_FILES += $(TEST_DIR)/test_call.py
-TEST_FILES += $(TEST_DIR)/test_fn.py
-TEST_FILES += $(TEST_DIR)/test_lambda.py
+
+# Make lib.py available for import
+export PYTHONPATH = t
+
+TEST_FILES += $(TEST_DIR)/ast
 
 test: $(OUTPUT)
 	$(PYTHON) -m pytest $(TEST_FILES)
