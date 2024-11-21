@@ -49,3 +49,22 @@ def test_var_declaration_tuple():
         let c = b;
     }
     """)
+
+def test_must_know_type():
+    assert typecheck_passes("""
+    fn main() {
+        let a = 32;
+    }
+    """)
+
+    assert typecheck_passes("""
+    fn main() {
+        let a: i32;
+    }
+    """)
+
+    assert not typecheck_passes("""
+    fn main() {
+        let a;
+    }
+    """)

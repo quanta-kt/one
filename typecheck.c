@@ -1031,9 +1031,14 @@ int walk_var_decl(ast_stmt_tc_t* self, ast_node_var_decl* stmt) {
 
     typeres_infer_number_type(variable_type, value_type);
 
+    if (variable_type->type == TYPE_RES_UNKNOWN) {
+        report_type_err("a variable must either be initialized or have a type");
+        ret = false;
+    }
+
     environment_put_symbol(self->ctx->env, stmt->name, variable_type);
 
-    ret = !value_type->is_err;
+    ret &= !value_type->is_err;
 
     if (stmt->value != NULL && !typeres_is_eq(variable_type, value_type)) {
         report_type_err("incompatible assignment at variable initialization");
