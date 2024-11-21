@@ -12,11 +12,9 @@ typedef struct {
 
 typedef VEC(symbol) vec_symbol;
 
-typedef struct _environment environment;
-
 typedef struct _environment {
     vec_symbol symbols;
-    environment* prev;
+    struct _environment* prev;
 } environment;
 
 typedef struct {
