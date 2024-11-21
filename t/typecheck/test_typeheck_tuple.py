@@ -18,28 +18,28 @@ def test_typecheck_tuple():
 
     assert typecheck_passes("""
     fn main() {
-        let a: (string, number);
-        let b: (string, number) = a;
+        let a: (string, i32);
+        let b: (string, i32) = a;
     }
     """)
 
     assert typecheck_passes("""
     fn main() {
-        let a: (string, (number, string));
-        let b: (string, (number, string)) = a;
+        let a: (string, (i32, string));
+        let b: (string, (i32, string)) = a;
     }
     """)
 
     assert not typecheck_passes("""
     fn main() {
-        let a: (string, (string, number));
-        let b: (string, (number, string)) = a;
+        let a: (string, (string, i32));
+        let b: (string, (i32, string)) = a;
     }
     """)
 
     assert not typecheck_passes("""
     fn main() {
         let a: (string);
-        let b: (number) = a;
+        let b: (i32) = a;
     }
     """)

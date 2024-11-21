@@ -21,10 +21,11 @@ static void walk_boolean_type(
     printf("boolean");
 }
 
-static void walk_number_type(
-    ast_typename_printer_t* _self, ast_typename_number* _node
+static void walk_integer_type(
+    ast_typename_printer_t* _self, ast_typename_integer* node
 ) {
-    printf("number");
+    putchar(node->is_signed ? 'i' : 'u');
+    printf("%d", node->size * 8);
 };
 
 static void walk_string_type(
@@ -74,7 +75,7 @@ static void walk_function_type(
 static void print_typename(ast_typename* node) {
     ast_typename_printer_t printer = (ast_typename_printer_t){
         .walk_boolean_type = walk_boolean_type,
-        .walk_number_type = walk_number_type,
+        .walk_integer_type = walk_integer_type,
         .walk_string_type = walk_string_type,
         .walk_tuple_type = walk_tuple_type,
         .walk_function_type = walk_function_type,

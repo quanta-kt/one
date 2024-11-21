@@ -249,7 +249,7 @@ static typeres* make_typeres_from_ast(
             res->type = TYPE_RES_BOOLEAN;
             break;
         }
-        case TYPE_NAME_NUMBER: {
+        case TYPE_NAME_INTEGER: {
             res->type = TYPE_RES_NUMBER;
             break;
         }

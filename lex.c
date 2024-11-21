@@ -28,7 +28,12 @@ keyword keyword_table[] = {
     TABLE_ENTRY(TOK_RETURN, "return"),
     TABLE_ENTRY(TOK_LET, "async"),
     TABLE_ENTRY(TOK_LET, "await"),
-    TABLE_ENTRY(TOK_KW_NUMBER, "number"),
+    TABLE_ENTRY(TOK_U8, "u8"),
+    TABLE_ENTRY(TOK_U16, "u16"),
+    TABLE_ENTRY(TOK_U32, "u32"),
+    TABLE_ENTRY(TOK_I8, "i8"),
+    TABLE_ENTRY(TOK_I16, "i16"),
+    TABLE_ENTRY(TOK_I32, "i32"),
     TABLE_ENTRY(TOK_KW_STRING, "string"),
     TABLE_ENTRY(TOK_KW_BOOLEAN, "boolean"),
 };

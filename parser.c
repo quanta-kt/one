@@ -222,11 +222,39 @@ static ast_typename* typename_tuple(parser_t* parser) {
     return make_ast_typename_tuple(parser->allocator, items);
 }
 
+static ast_typename* typename_integer(parser_t* parser) {
+    token_type tt = parser->prev.type;
+
+    bool is_signed = tt == TOK_I8 || tt == TOK_I16 || tt == TOK_I32;
+
+    ast_integer_size size = INTEGER_SIZE_32;
+    switch (parser->prev.type) {
+        case TOK_I8:
+        case TOK_U8:
+            size = INTEGER_SIZE_8;
+            break;
+
+        case TOK_I16:
+        case TOK_U16:
+            size = INTEGER_SIZE_16;
+            break;
+
+        case TOK_I32:
+        case TOK_U32:
+            size = INTEGER_SIZE_32;
+            break;
+    }
+
+    return make_ast_typename_integer(parser->allocator, is_signed, size);
+}
+
 static ast_typename* typename(parser_t* parser) {
     if (match(parser, TOK_KW_BOOLEAN)) {
         return make_ast_typename(parser->allocator, TYPE_NAME_BOOLEAN);
-    } else if (match(parser, TOK_KW_NUMBER)) {
-        return make_ast_typename(parser->allocator, TYPE_NAME_NUMBER);
+    } else if (match(parser, TOK_U8) || match(parser, TOK_I8) ||
+               match(parser, TOK_U16) || match(parser, TOK_I16) ||
+               match(parser, TOK_U32) || match(parser, TOK_I32)) {
+        return typename_integer(parser);
     } else if (match(parser, TOK_KW_STRING)) {
         return make_ast_typename(parser->allocator, TYPE_NAME_STRING);
     } else if (match(parser, TOK_PAREN_OPEN)) {

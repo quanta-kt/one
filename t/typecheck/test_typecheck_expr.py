@@ -21,76 +21,76 @@ def test_assign():
     """)
 
 
-def test_binary_number():
+def test_binary_i32():
     assert typecheck_passes("""
     fn main() {
-        let a: number = 1 + 2;
-        let b: number = a + 0;
-        let c: number = a + b;
+        let a: i32 = 1 + 2;
+        let b: i32 = a + 0;
+        let c: i32 = a + b;
     }
     """)
 
     assert typecheck_passes("""
     fn main() {
-        let a: number = 1 - 2;
-        let b: number = a - 0;
-        let c: number = a - b;
+        let a: i32 = 1 - 2;
+        let b: i32 = a - 0;
+        let c: i32 = a - b;
     }
     """)
 
     assert typecheck_passes("""
     fn main() {
-        let a: number = 1 * 2;
-        let b: number = a * 0;
-        let c: number = a * b;
+        let a: i32 = 1 * 2;
+        let b: i32 = a * 0;
+        let c: i32 = a * b;
     }
     """)
 
     assert typecheck_passes("""
     fn main() {
-        let a: number = 1 / 2;
-        let b: number = a / 0;
-        let c: number = a / b;
+        let a: i32 = 1 / 2;
+        let b: i32 = a / 0;
+        let c: i32 = a / b;
     }
     """)
 
     assert typecheck_passes("""
     fn main() {
-        let a: number = 1 | 2;
-        let b: number = a | 0;
-        let c: number = a | b;
+        let a: i32 = 1 | 2;
+        let b: i32 = a | 0;
+        let c: i32 = a | b;
     }
     """)
 
     assert typecheck_passes("""
     fn main() {
-        let a: number = 1 & 2;
-        let b: number = a & 0;
-        let c: number = a & b;
+        let a: i32 = 1 & 2;
+        let b: i32 = a & 0;
+        let c: i32 = a & b;
     }
     """)
 
     assert typecheck_passes("""
     fn main() {
-        let a: number = 1 ^ 2;
-        let b: number = a ^ 0;
-        let c: number = a ^ b;
+        let a: i32 = 1 ^ 2;
+        let b: i32 = a ^ 0;
+        let c: i32 = a ^ b;
     }
     """)
 
     assert typecheck_passes("""
     fn main() {
-        let a: number = 1 % 2;
-        let b: number = a % 0;
-        let c: number = a % b;
+        let a: i32 = 1 % 2;
+        let b: i32 = a % 0;
+        let c: i32 = a % b;
     }
     """)
 
     assert typecheck_passes("""
     fn main() {
-        let a: number = 1 % 2;
-        let b: number = a % 0;
-        let c: number = a % b;
+        let a: i32 = 1 % 2;
+        let b: i32 = a % 0;
+        let c: i32 = a % b;
     }
     """)
 
@@ -98,8 +98,8 @@ def test_binary_number():
 def test_binary_boolean():
     assert typecheck_passes("""
     fn main() {
-        let n: number = 3;
-        let m: number = 4;
+        let n: i32 = 3;
+        let m: i32 = 4;
 
         let a: boolean = 1 > 2;
         let b: boolean = n > 0;
@@ -109,8 +109,8 @@ def test_binary_boolean():
 
     assert typecheck_passes("""
     fn main() {
-        let n: number = 3;
-        let m: number = 4;
+        let n: i32 = 3;
+        let m: i32 = 4;
 
         let a: boolean = 1 < 2;
         let b: boolean = n < 0;
@@ -154,9 +154,9 @@ def test_binary_boolean():
 
 def test_call():
     assert typecheck_passes("""
-    fn a() -> number {}
+    fn a() -> i32 {}
 
     fn main() {
-        let num: number = a();
+        let num: i32 = a();
     }
     """)

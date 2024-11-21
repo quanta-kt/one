@@ -11,7 +11,7 @@ def test_var_declaration():
 
     assert not typecheck_passes("""
     fn main() {
-        let b: number;
+        let b: i32;
         let a: string = b;
     }
     """)
@@ -28,7 +28,7 @@ def test_var_declaration_implicit():
     assert not typecheck_passes("""
     fn main() {
         let b = "";
-        let a: number = b;
+        let a: i32 = b;
     }
     """)
 
@@ -45,7 +45,7 @@ def test_var_declaration_tuple():
     assert not typecheck_passes("""
     fn main() {
         let a: (string, string);
-        let b: (number, string) = a;;
+        let b: (i32, string) = a;;
         let c = b;
     }
     """)

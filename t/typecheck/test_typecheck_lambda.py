@@ -4,12 +4,12 @@ from lib import typecheck_passes
 def test_lambda_compat():
     assert typecheck_passes("""
     fn main() {
-        let binary: fn(number, number) -> number;
+        let binary: fn(i32, i32) -> i32;
 
-        let add = fn(a: number, b: number) -> number {
+        let add = fn(a: i32, b: i32) -> i32 {
             a + b;
         };
-        let mul = fn(a: number, b: number) -> number {
+        let mul = fn(a: i32, b: i32) -> i32 {
             a * b;
         };
 
@@ -21,8 +21,8 @@ def test_lambda_compat():
     # differing return types
     assert not typecheck_passes("""
     fn main() {
-        let binary: fn(number, number) -> number;
-        let concat = fn(a: number, b: number) -> string {};
+        let binary: fn(i32, i32) -> i32;
+        let concat = fn(a: i32, b: i32) -> string {};
         binary = concat;
     }
     """)
@@ -30,8 +30,8 @@ def test_lambda_compat():
     # differing arity
     assert not typecheck_passes("""
     fn main() {
-        let binary: fn(number, number) -> number;
-        let square = fn(a: number) -> number {};
+        let binary: fn(i32, i32) -> i32;
+        let square = fn(a: i32) -> i32 {};
         binary = square;
     }
     """)
@@ -39,8 +39,8 @@ def test_lambda_compat():
     # differing arguments
     assert not typecheck_passes("""
     fn main() {
-        let unary: fn(number) -> number;
-        let parse_int = fn(a: string) -> number {};
+        let unary: fn(i32) -> i32;
+        let parse_int = fn(a: string) -> i32 {};
         binary = parse_int;
     }
     """)
@@ -49,7 +49,7 @@ def test_lambda_compat():
 def test_lambda_params():
     assert typecheck_passes("""
     fn main() {
-        let repeat = fn(what: string, times: number) -> string {
+        let repeat = fn(what: string, times: i32) -> string {
             let i = 0;
             let result = what;
 
@@ -63,9 +63,9 @@ def test_lambda_params():
 
     assert not typecheck_passes("""
     fn main() {
-        let repeat = fn(what: string, times: number) -> string {
+        let repeat = fn(what: string, times: i32) -> string {
             let i = 0;
-            let result: number = what;
+            let result: i32 = what;
 
             while i < times {
                 result = result + what;

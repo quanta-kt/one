@@ -9,6 +9,6 @@ def test_tuple_type():
 
     assert stmt2sexpr("let single: (string);") == "(let single :(string) NULL)"
 
-    assert stmt2sexpr("let pair: (string, number);") == "(let pair :(string, number) NULL)"
+    assert stmt2sexpr("let pair: (string, i32);") == "(let pair :(string, i32) NULL)"
 
-    assert stmt2sexpr("let pair: ((string, number), (string, number));") == "(let pair :((string, number), (string, number)) NULL)"
+    assert stmt2sexpr("let pair: ((string, i32), (string, i32));") == "(let pair :((string, i32), (string, i32)) NULL)"

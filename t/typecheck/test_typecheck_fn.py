@@ -3,10 +3,10 @@ from lib import typecheck_passes
 
 def test_top_level_fn_in_scope():
     assert typecheck_passes("""
-    fn add(a: number, b: number) -> number {}
+    fn add(a: i32, b: i32) -> i32 {}
 
     fn main() {
-        let binary: fn(number, number) -> number;
+        let binary: fn(i32, i32) -> i32;
         let sum = add;
         let binary = sum;
     }
@@ -15,8 +15,8 @@ def test_top_level_fn_in_scope():
 
 def test_fn_param_in_scope():
     assert typecheck_passes("""
-    fn sum(a: number, b: number) {
-        let s: number = a + b;
+    fn sum(a: i32, b: i32) {
+        let s: i32 = a + b;
     }
     """)
 

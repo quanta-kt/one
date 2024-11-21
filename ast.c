@@ -24,6 +24,15 @@ ast_typename* make_ast_typename_tuple(
     return ret;
 }
 
+ast_typename* make_ast_typename_integer(
+    allocator_t* allocator, bool is_signed, ast_integer_size size
+) {
+    ast_typename* ret = make_ast_typename(allocator, TYPE_NAME_INTEGER);
+    ret->as.integer.is_signed = is_signed;
+    ret->as.integer.size = size;
+    return ret;
+}
+
 ast_typename* make_ast_typename_function(
     allocator_t* allocator, vec_typename params, ast_typename* return_type
 ) {
@@ -37,7 +46,7 @@ void free_ast_typename(allocator_t* allocator, ast_typename* node) {
     switch (node->type) {
         case TYPE_NAME_BOOLEAN:
         case TYPE_NAME_STRING:
-        case TYPE_NAME_NUMBER:
+        case TYPE_NAME_INTEGER:
             break;
 
         case TYPE_NAME_TUPLE: {

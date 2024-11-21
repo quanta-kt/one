@@ -6,19 +6,30 @@
 #include "vec.h"
 
 typedef enum {
-    TYPE_NAME_NUMBER,
+    TYPE_NAME_INTEGER,
     TYPE_NAME_STRING,
     TYPE_NAME_BOOLEAN,
     TYPE_NAME_TUPLE,
     TYPE_NAME_FUNCTION,
 } ast_typename_type;
 
+typedef enum {
+    INTEGER_SIZE_8 = 1,
+    INTEGER_SIZE_16 = 2,
+    INTEGER_SIZE_32 = 4,
+} ast_integer_size;
+
 struct _ast_typename;
 
 typedef VEC(struct _ast_typename*) vec_typename;
 
 typedef struct {
-} ast_typename_number, ast_typename_string, ast_typename_boolean;
+} ast_typename_string, ast_typename_boolean;
+
+typedef struct {
+    bool is_signed;
+    ast_integer_size size;
+} ast_typename_integer;
 
 typedef struct {
     vec_typename items;
@@ -32,7 +43,7 @@ typedef struct {
 typedef struct _ast_typename {
     union {
         ast_typename_boolean boolean;
-        ast_typename_number number;
+        ast_typename_integer integer;
         ast_typename_string string;
         ast_typename_tuple tuple;
         ast_typename_function function;
@@ -49,6 +60,10 @@ ast_typename* make_ast_typename_tuple(
     allocator_t* allocator, vec_typename items
 );
 
+ast_typename* make_ast_typename_integer(
+    allocator_t* allocator, bool is_signed, ast_integer_size size
+);
+
 ast_typename* make_ast_typename_function(
     allocator_t* allocator, vec_typename params, ast_typename* return_type
 );
@@ -58,7 +73,7 @@ void free_ast_typename(allocator_t* allocator, ast_typename* node);
 #define AST_TYPENAME_WALKER(name, return_type, ctx_type)                            \
     struct _##name;                                                                 \
     typedef struct _##name {                                                        \
-        return_type (*walk_number_type)(struct _##name*, ast_typename_number*);     \
+        return_type (*walk_integer_type)(struct _##name*, ast_typename_integer*);   \
         return_type (*walk_string_type)(struct _##name*, ast_typename_string*);     \
         return_type (*walk_boolean_type)(struct _##name*, ast_typename_boolean*);   \
         return_type (*walk_tuple_type)(struct _##name*, ast_typename_tuple*);       \
@@ -69,8 +84,8 @@ void free_ast_typename(allocator_t* allocator, ast_typename* node);
                                                                                     \
     return_type name##_walk(name* walker, ast_typename* node) {                     \
         switch (node->type) {                                                       \
-            case TYPE_NAME_NUMBER:                                                  \
-                return walker->walk_number_type(walker, &node->as.number);          \
+            case TYPE_NAME_INTEGER:                                                 \
+                return walker->walk_integer_type(walker, &node->as.integer);        \
                                                                                     \
             case TYPE_NAME_BOOLEAN:                                                 \
                 return walker->walk_boolean_type(walker, &node->as.boolean);        \
