@@ -121,7 +121,7 @@ static typeres* make_typeres(
 static typeres* make_typeres_function(
     allocator_t* allocator, vec_typeres params, typeres* return_type
 ) {
-    typeres* res = make_typeres(allocator, false, TYPE_NAME_FUNCTION);
+    typeres* res = make_typeres(allocator, false, TYPE_RES_FUNCTION);
     res->function.params = params;
     res->function.return_type = return_type;
     return res;
@@ -132,7 +132,7 @@ static typeres* typeres_dup(allocator_t* allocator, typeres* src) {
 
     memcpy(res, src, sizeof(typeres));
 
-    if (src->type == TYPE_NAME_FUNCTION) {
+    if (src->type == TYPE_RES_FUNCTION) {
         res->function.return_type =
             typeres_dup(allocator, src->function.return_type);
 
@@ -251,12 +251,12 @@ static typeres* make_typeres_from_ast(
 
 static void free_typeres(allocator_t* allocator, typeres* res) {
     switch (res->type) {
-        case TYPE_NAME_BOOLEAN:
-        case TYPE_NAME_STRING:
-        case TYPE_NAME_NUMBER:
+        case TYPE_RES_BOOLEAN:
+        case TYPE_RES_STRING:
+        case TYPE_RES_NUMBER:
             break;
 
-        case TYPE_NAME_FUNCTION: {
+        case TYPE_RES_FUNCTION: {
             free_typeres(allocator, res->function.return_type);
 
             typeres** param;
@@ -645,7 +645,7 @@ cleanup:
 }
 
 typeres* walk_bool(ast_expr_tc_t* self, ast_node_bool* expr) {
-    typeres* res = make_typeres(self->ctx->allocator, false, TYPE_NAME_BOOLEAN);
+    typeres* res = make_typeres(self->ctx->allocator, false, TYPE_RES_BOOLEAN);
     return res;
 }
 
