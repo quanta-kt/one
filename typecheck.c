@@ -129,26 +129,41 @@ static typeres* make_typeres_function(
     return res;
 }
 
+static vec_typeres vec_typeres_dup(allocator_t* allocator, vec_typeres* src);
+
 static typeres* typeres_dup(allocator_t* allocator, typeres* src) {
     typeres* res = ALLOC(allocator, typeres);
 
     res->is_err = src->is_err;
     res->type = src->type;
 
+    if (src->type == TYPE_RES_TUPLE) {
+        res->tuple.items = vec_typeres_dup(allocator, &src->tuple.items);
+    }
+
     if (src->type == TYPE_RES_FUNCTION) {
         res->function.return_type =
             typeres_dup(allocator, src->function.return_type);
 
-        res->function.params = (vec_typeres)vec_make(allocator);
-
-        typeres** param;
-        vec_foreach(&src->function.params, param) {
-            typeres* dup_param = typeres_dup(allocator, *param);
-            vec_push(&res->function.params, &dup_param);
-        }
+        res->function.params = vec_typeres_dup(allocator, &src->function.params);
     }
 
     return res;
+}
+
+/**
+ * Duplicates all typeres in src
+ */
+static vec_typeres vec_typeres_dup(allocator_t* allocator, vec_typeres* src) {
+    vec_typeres ret = vec_make(allocator);
+
+    typeres** item;
+    vec_foreach(src, item) {
+        typeres* dup_param = typeres_dup(allocator, *item);
+        vec_push(&ret, &dup_param);
+    }
+
+    return ret;
 }
 
 static bool vec_typeres_is_eq(vec_typeres* left, vec_typeres* right);

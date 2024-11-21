@@ -31,3 +31,21 @@ def test_var_declaration_implicit():
         let a: number = b;
     }
     """)
+
+
+def test_var_declaration_tuple():
+    assert typecheck_passes("""
+    fn main() {
+        let a: (string, string);
+        let b: (string, string) = a;
+        let c = b;
+    }
+    """)
+
+    assert not typecheck_passes("""
+    fn main() {
+        let a: (string, string);
+        let b: (number, string) = a;;
+        let c = b;
+    }
+    """)
