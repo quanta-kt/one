@@ -2,6 +2,7 @@
 
 #include <stdarg.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 typedef struct _typeres typeres;
 
@@ -82,7 +83,7 @@ static typeres* typecheck_expr(tc_ctx* ctx, ast_expr_node* expr) {
 typedef VEC(typeres*) vec_typeres;
 
 typedef enum {
-    TYPE_RES_NUMBER,
+    TYPE_RES_INTEGER,
     TYPE_RES_STRING,
     TYPE_RES_BOOLEAN,
     TYPE_RES_TUPLE,
@@ -94,6 +95,40 @@ typedef enum {
 // A type resolution, i.e. a resolved type of an expression or a symbol.
 typedef struct _typeres {
     union {
+        struct {
+            bool is_signed;
+            ast_integer_size size;
+
+            /**
+             * Sometimes we don't directly know from the context what size ang
+             * sign a number node is. Consider the statement:
+             *
+             *     let num: i16 = 44;
+             *
+             * Here it is clear that the name 'num' itself has type 'i16', but
+             * the AST node holding the number '44' does not have any type
+             * information to it. We are therefore unable to concretely resolve
+             * the size and sign of the number literals without explicit type,
+             * like in this case.
+             *
+             * For number literals that don't explicitly specify their type, we
+             * lax the type-checking until we discover what the concrete type
+             * should be. In this case, we discover the concreate type when
+             * walking the assignment node.
+             *
+             * Until we can know the "concrete" type of a number, we assume its
+             * an i32. Therefore, in the following code:
+             *
+             *     let num = 44;
+             *
+             * 'num' defaults to i32, as the literal 44 by default has type i32.
+             *
+             * This field tells us if this type was resolved with default sign
+             * and size.
+             */
+            bool default_until_inferred;
+        } integer;
+
         struct {
             vec_typeres params;
             typeres* return_type;
@@ -129,6 +164,20 @@ static typeres* make_typeres_function(
     return res;
 }
 
+static typeres* make_typeres_integer(
+    allocator_t* allocator,
+    bool is_signed,
+    ast_integer_size size,
+    bool is_implicit
+) {
+    typeres* res = make_typeres(allocator, false, TYPE_RES_INTEGER);
+    res->integer.is_signed = is_signed;
+    res->integer.size = size;
+    res->integer.default_until_inferred = is_implicit;
+
+    return res;
+}
+
 static vec_typeres vec_typeres_dup(allocator_t* allocator, vec_typeres* src);
 
 static typeres* typeres_dup(allocator_t* allocator, typeres* src) {
@@ -136,6 +185,13 @@ static typeres* typeres_dup(allocator_t* allocator, typeres* src) {
 
     res->is_err = src->is_err;
     res->type = src->type;
+
+    if (src->type == TYPE_RES_INTEGER) {
+        res->integer.is_signed = src->integer.is_signed;
+        res->integer.size = src->integer.size;
+        res->integer.default_until_inferred =
+            src->integer.default_until_inferred;
+    }
 
     if (src->type == TYPE_RES_TUPLE) {
         res->tuple.items = vec_typeres_dup(allocator, &src->tuple.items);
@@ -177,6 +233,16 @@ static bool typeres_is_eq(typeres* left, typeres* right) {
         return false;
     }
 
+    if (left->type == TYPE_RES_INTEGER) {
+        return left->integer.is_signed == right->integer.is_signed &&
+                   left->integer.size == right->integer.size ||
+
+               // if the size and sign on at least of the types are implicit, we
+               // overlook the details
+               left->integer.default_until_inferred ||
+               right->integer.default_until_inferred;
+    }
+
     if (left->type == TYPE_RES_TUPLE) {
         return vec_typeres_is_eq(&left->tuple.items, &right->tuple.items);
     }
@@ -194,8 +260,7 @@ static bool typeres_is_eq(typeres* left, typeres* right) {
                );
     }
 
-    // For types other than tuples and functions, only equality of the base type
-    // matters.
+    // For other types, only equality of the base type matters.
     return true;
 }
 
@@ -219,6 +284,62 @@ static bool vec_typeres_is_eq(vec_typeres* left, vec_typeres* right) {
     }
 
     return true;
+}
+
+/**
+ * If `type` is implicitly assumed to be the default signed/sized number,
+ * change its sign/size to match that of `infer_from`.
+ * This is the "type inference" stage of the number literals.
+ *
+ * The "try" in the function name implies that the type is not guaranteed to
+ * have a concrete size and sign this is called in case where infer_from itself
+ * is implicitly assumed to be the default sign/size.
+ */
+static void typeres_try_infer_number_type(
+    typeres* type, const typeres* infer_from
+) {
+    if (type->type != infer_from->type) {
+        return;
+    }
+
+    if (type->type != TYPE_RES_INTEGER) {
+        return;
+    }
+
+    // we already know the type
+    if (!type->integer.default_until_inferred) {
+        return;
+    }
+
+    type->integer.is_signed = infer_from->integer.is_signed;
+    type->integer.size = infer_from->integer.size;
+    type->integer.default_until_inferred =
+        infer_from->integer.default_until_inferred;
+}
+
+/**
+ * Same as typeres_try_infer_number_type but marks the implicitly indefred
+ * default sign and size as final  if type of `infer_from` is itself not
+ * concretely known.
+ *
+ * In other words, unlike typepres_try_infer_number, this variant guarantees
+ * that after the call, the number type will have a concrete type.
+ */
+static void typeres_infer_number_type(
+    typeres* type, const typeres* infer_from
+) {
+    typeres_try_infer_number_type(type, infer_from);
+
+    if (type->type != TYPE_RES_INTEGER) {
+        return;
+    }
+
+    // we already know the type
+    if (!type->integer.default_until_inferred) {
+        return;
+    }
+
+    type->integer.default_until_inferred = false;
 }
 
 static typeres* make_typeres_from_ast(
@@ -251,7 +372,9 @@ static typeres* make_typeres_from_ast(
             break;
         }
         case TYPE_NAME_INTEGER: {
-            res->type = TYPE_RES_NUMBER;
+            res->type = TYPE_RES_INTEGER;
+            res->integer.is_signed = typename->as.integer.is_signed;
+            res->integer.size = typename->as.integer.size;
             break;
         }
         case TYPE_NAME_STRING: {
@@ -298,7 +421,7 @@ static void free_typeres(allocator_t* allocator, typeres* res) {
     switch (res->type) {
         case TYPE_RES_BOOLEAN:
         case TYPE_RES_STRING:
-        case TYPE_RES_NUMBER:
+        case TYPE_RES_INTEGER:
             break;
 
         case TYPE_RES_FUNCTION: {
@@ -386,6 +509,11 @@ static void report_type_err(const char* fmt, ...) {
 static typeres* typecheck_op_assign(
     allocator_t* allocator, typeres* left, typeres* right
 ) {
+    if (right->type == left->type) {
+        // infer from the variable's type
+        typeres_infer_number_type(right, left);
+    }
+
     typeres* ret = typeres_dup(allocator, left);
     ret->is_err = !typeres_is_eq(left, right);
 
@@ -399,6 +527,9 @@ static typeres* typecheck_op_assign(
 static typeres* typecheck_op_eq(
     allocator_t* allocator, typeres* left, typeres* right
 ) {
+    typeres_try_infer_number_type(left, right);
+    typeres_try_infer_number_type(right, left);
+
     typeres* ret =
         make_typeres(allocator, !typeres_is_eq(left, right), TYPE_RES_BOOLEAN);
 
@@ -442,6 +573,9 @@ static typeres* typecheck_op_or(
 static typeres* typecheck_op_plus(
     allocator_t* allocator, typeres* left, typeres* right
 ) {
+    typeres_try_infer_number_type(left, right);
+    typeres_try_infer_number_type(right, left);
+
     bool err = left->type != right->type;
     typeres_type type = TYPE_RES_UNKNOWN;
 
@@ -452,7 +586,7 @@ static typeres* typecheck_op_plus(
     typeres* ret = typeres_dup(allocator, left);
 
     switch (left->type) {
-        case TYPE_RES_NUMBER:
+        case TYPE_RES_INTEGER:
         case TYPE_RES_STRING:
             break;
 
@@ -470,8 +604,11 @@ static typeres* typecheck_op_plus(
 static typeres* typecheck_op_minus(
     allocator_t* allocator, typeres* left, typeres* right
 ) {
+    typeres_try_infer_number_type(left, right);
+    typeres_try_infer_number_type(right, left);
+
     typeres* ret = typeres_dup(allocator, left);
-    ret->is_err = left->type != right->type || left->type != TYPE_RES_NUMBER;
+    ret->is_err = left->type != right->type || left->type != TYPE_RES_INTEGER;
 
     if (ret->is_err) {
         report_type_err(
@@ -485,8 +622,11 @@ static typeres* typecheck_op_minus(
 static typeres* typecheck_op_bitwise_or(
     allocator_t* allocator, typeres* left, typeres* right
 ) {
+    typeres_try_infer_number_type(left, right);
+    typeres_try_infer_number_type(right, left);
+
     typeres* ret = typeres_dup(allocator, left);
-    ret->is_err = left->type != right->type || left->type != TYPE_RES_NUMBER;
+    ret->is_err = left->type != right->type || left->type != TYPE_RES_INTEGER;
 
     if (ret->is_err) {
         report_type_err(
@@ -500,8 +640,11 @@ static typeres* typecheck_op_bitwise_or(
 static typeres* typecheck_op_bitwise_and(
     allocator_t* allocator, typeres* left, typeres* right
 ) {
+    typeres_try_infer_number_type(left, right);
+    typeres_try_infer_number_type(right, left);
+
     typeres* ret = typeres_dup(allocator, left);
-    ret->is_err = left->type != right->type || left->type != TYPE_RES_NUMBER;
+    ret->is_err = left->type != right->type || left->type != TYPE_RES_INTEGER;
 
     if (ret->is_err) {
         report_type_err(
@@ -515,8 +658,11 @@ static typeres* typecheck_op_bitwise_and(
 static typeres* typecheck_op_xor(
     allocator_t* allocator, typeres* left, typeres* right
 ) {
+    typeres_try_infer_number_type(left, right);
+    typeres_try_infer_number_type(right, left);
+
     typeres* ret = typeres_dup(allocator, left);
-    ret->is_err = left->type != right->type || left->type != TYPE_RES_NUMBER;
+    ret->is_err = left->type != right->type || left->type != TYPE_RES_INTEGER;
 
     if (ret->is_err) {
         report_type_err(
@@ -530,9 +676,12 @@ static typeres* typecheck_op_xor(
 static typeres* typecheck_op_gt(
     allocator_t* allocator, typeres* left, typeres* right
 ) {
+    typeres_try_infer_number_type(left, right);
+    typeres_try_infer_number_type(right, left);
+
     typeres* ret = make_typeres(
         allocator,
-        left->type != right->type || left->type != TYPE_RES_NUMBER,
+        left->type != right->type || left->type != TYPE_RES_INTEGER,
         TYPE_RES_BOOLEAN
     );
     if (ret->is_err) {
@@ -547,9 +696,12 @@ static typeres* typecheck_op_gt(
 static typeres* typecheck_op_lt(
     allocator_t* allocator, typeres* left, typeres* right
 ) {
+    typeres_try_infer_number_type(left, right);
+    typeres_try_infer_number_type(right, left);
+
     typeres* ret = make_typeres(
         allocator,
-        left->type != right->type || left->type != TYPE_RES_NUMBER,
+        left->type != right->type || left->type != TYPE_RES_INTEGER,
         TYPE_RES_BOOLEAN
     );
     if (ret->is_err) {
@@ -565,8 +717,11 @@ static typeres* typecheck_op_mod(
 
     allocator_t* allocator, typeres* left, typeres* right
 ) {
+    typeres_try_infer_number_type(left, right);
+    typeres_try_infer_number_type(right, left);
+
     typeres* ret = typeres_dup(allocator, left);
-    ret->is_err = left->type != right->type || left->type != TYPE_RES_NUMBER;
+    ret->is_err = left->type != right->type || left->type != TYPE_RES_INTEGER;
 
     if (ret->is_err) {
         report_type_err(
@@ -580,8 +735,11 @@ static typeres* typecheck_op_mod(
 static typeres* typecheck_op_mul(
     allocator_t* allocator, typeres* left, typeres* right
 ) {
+    typeres_try_infer_number_type(left, right);
+    typeres_try_infer_number_type(right, left);
+
     typeres* ret = typeres_dup(allocator, left);
-    ret->is_err = left->type != right->type || left->type != TYPE_RES_NUMBER;
+    ret->is_err = left->type != right->type || left->type != TYPE_RES_INTEGER;
 
     if (ret->is_err) {
         report_type_err(
@@ -595,8 +753,11 @@ static typeres* typecheck_op_mul(
 static typeres* typecheck_op_div(
     allocator_t* allocator, typeres* left, typeres* right
 ) {
+    typeres_try_infer_number_type(left, right);
+    typeres_try_infer_number_type(right, left);
+
     typeres* ret = typeres_dup(allocator, left);
-    ret->is_err = left->type != right->type || left->type != TYPE_RES_NUMBER;
+    ret->is_err = left->type != right->type || left->type != TYPE_RES_INTEGER;
 
     if (ret->is_err) {
         report_type_err(
@@ -769,7 +930,13 @@ typeres* walk_lambda(ast_expr_tc_t* self, ast_node_lambda* expr) {
 }
 
 typeres* walk_num(ast_expr_tc_t* self, ast_node_num* expr) {
-    return make_typeres(self->ctx->allocator, false, TYPE_RES_NUMBER);
+    return make_typeres_integer(
+        self->ctx->allocator,
+        true,
+        INTEGER_SIZE_32,
+        // we don't know the actual sign an size yet, i32 is assumed
+        true
+    );
 }
 
 typeres* walk_str(ast_expr_tc_t* self, ast_node_str* expr) {
@@ -861,6 +1028,8 @@ int walk_var_decl(ast_stmt_tc_t* self, ast_node_var_decl* stmt) {
             ? make_typeres_from_ast(self->ctx->allocator, stmt->typename)
             // when explicit type is missing, we use the expression's type
             : typeres_dup(self->ctx->allocator, value_type);
+
+    typeres_infer_number_type(variable_type, value_type);
 
     environment_put_symbol(self->ctx->env, stmt->name, variable_type);
 
