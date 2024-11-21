@@ -6,10 +6,10 @@
 #include "vec.h"
 
 typedef enum {
-    TYPE_NAME_UNIT,
     TYPE_NAME_NUMBER,
     TYPE_NAME_STRING,
     TYPE_NAME_BOOLEAN,
+    TYPE_NAME_TUPLE,
     TYPE_NAME_FUNCTION,
 } ast_typename_type;
 
@@ -18,8 +18,11 @@ struct _ast_typename;
 typedef VEC(struct _ast_typename*) vec_typename;
 
 typedef struct {
-} ast_typename_number, ast_typename_string, ast_typename_boolean,
-    ast_typename_unit;
+} ast_typename_number, ast_typename_string, ast_typename_boolean;
+
+typedef struct {
+    vec_typename items;
+} ast_typename_tuple;
 
 typedef struct {
     vec_typename params;
@@ -31,7 +34,7 @@ typedef struct _ast_typename {
         ast_typename_boolean boolean;
         ast_typename_number number;
         ast_typename_string string;
-        ast_typename_unit unit;
+        ast_typename_tuple tuple;
         ast_typename_function function;
     } as;
 
@@ -39,6 +42,12 @@ typedef struct _ast_typename {
 } ast_typename;
 
 ast_typename* make_ast_typename(allocator_t* allocator, ast_typename_type type);
+
+ast_typename* make_ast_typename_unit(allocator_t* allocator);
+
+ast_typename* make_ast_typename_tuple(
+    allocator_t* allocator, vec_typename items
+);
 
 ast_typename* make_ast_typename_function(
     allocator_t* allocator, vec_typename params, ast_typename* return_type
@@ -52,7 +61,7 @@ void free_ast_typename(allocator_t* allocator, ast_typename* node);
         return_type (*walk_number_type)(struct _##name*, ast_typename_number*);     \
         return_type (*walk_string_type)(struct _##name*, ast_typename_string*);     \
         return_type (*walk_boolean_type)(struct _##name*, ast_typename_boolean*);   \
-        return_type (*walk_unit_type)(struct _##name*, ast_typename_unit*);         \
+        return_type (*walk_tuple_type)(struct _##name*, ast_typename_tuple*);       \
         return_type (*walk_function_type)(struct _##name*, ast_typename_function*); \
                                                                                     \
         ctx_type ctx;                                                               \
@@ -69,8 +78,8 @@ void free_ast_typename(allocator_t* allocator, ast_typename* node);
             case TYPE_NAME_STRING:                                                  \
                 return walker->walk_string_type(walker, &node->as.string);          \
                                                                                     \
-            case TYPE_NAME_UNIT:                                                    \
-                return walker->walk_unit_type(walker, &node->as.unit);              \
+            case TYPE_NAME_TUPLE:                                                   \
+                return walker->walk_tuple_type(walker, &node->as.tuple);            \
                                                                                     \
             case TYPE_NAME_FUNCTION:                                                \
                 return walker->walk_function_type(walker, &node->as.function);      \

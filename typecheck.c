@@ -82,10 +82,10 @@ static typeres* typecheck_expr(tc_ctx* ctx, ast_expr_node* expr) {
 typedef VEC(typeres*) vec_typeres;
 
 typedef enum {
-    TYPE_RES_UNIT,
     TYPE_RES_NUMBER,
     TYPE_RES_STRING,
     TYPE_RES_BOOLEAN,
+    TYPE_RES_TUPLE,
     TYPE_RES_FUNCTION,
 
     TYPE_RES_UNKNOWN,
@@ -98,6 +98,10 @@ typedef struct _typeres {
             vec_typeres params;
             typeres* return_type;
         } function;
+
+        struct {
+            vec_typeres items;
+        } tuple;
     };
 
     // What base type are we?
@@ -221,10 +225,20 @@ static typeres* make_typeres_from_ast(
             res->type = TYPE_RES_STRING;
             break;
         }
-        case TYPE_NAME_UNIT: {
-            res->type = TYPE_RES_UNIT;
+
+        case TYPE_NAME_TUPLE: {
+            res->type = TYPE_RES_TUPLE;
+
+            res->tuple.items = (vec_typeres)vec_make(allocator);
+            ast_typename** item;
+            vec_foreach(&typename->as.tuple.items, item) {
+                typeres* item_res = make_typeres_from_ast(allocator, *item);
+                vec_push(&res->tuple.items, &item_res);
+            }
+
             break;
         }
+
         case TYPE_NAME_FUNCTION: {
             res->type = TYPE_RES_FUNCTION;
 

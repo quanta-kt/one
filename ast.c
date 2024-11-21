@@ -12,6 +12,18 @@ ast_typename* make_ast_typename(
     return typename;
 }
 
+ast_typename* make_ast_typename_unit(allocator_t* allocator) {
+    return make_ast_typename_tuple(allocator, (vec_typename)vec_make(allocator));
+}
+
+ast_typename* make_ast_typename_tuple(
+    allocator_t* allocator, vec_typename items
+) {
+    ast_typename* ret = make_ast_typename(allocator, TYPE_NAME_TUPLE);
+    ret->as.tuple.items = items;
+    return ret;
+}
+
 ast_typename* make_ast_typename_function(
     allocator_t* allocator, vec_typename params, ast_typename* return_type
 ) {
@@ -27,6 +39,14 @@ void free_ast_typename(allocator_t* allocator, ast_typename* node) {
         case TYPE_NAME_STRING:
         case TYPE_NAME_NUMBER:
             break;
+
+        case TYPE_NAME_TUPLE: {
+            ast_typename** item;
+            vec_foreach(&node->as.tuple.items, item) {
+                free_ast_typename(allocator, *item);
+            }
+            vec_free(&node->as.tuple.items);
+        }; break;
 
         case TYPE_NAME_FUNCTION: {
             ast_typename** param;

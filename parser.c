@@ -180,14 +180,11 @@ static token expect(parser_t* parser, token_type tt, char const* message) {
     return parser->prev;
 }
 
-static ast_typename* function_typename(parser_t* parser) {
-    expect(parser, TOK_PAREN_OPEN, "expected '(' after 'fn'");
-
-    vec_typename params = vec_make(parser->allocator);
-
+static vec_typename typename_tuple_items(parser_t* parser, bool function) {
+    vec_typename items = vec_make(parser->allocator);
     while (!is_eof(parser) && !match(parser, TOK_PAREN_CLOSE)) {
         ast_typename* param = typename(parser);
-        vec_push(&params, &param);
+        vec_push(&items, &param);
 
         if (!match(parser, TOK_COMMA)) {
             advance(parser);  // ')' handled below
@@ -196,25 +193,33 @@ static ast_typename* function_typename(parser_t* parser) {
     }
 
     if (parser->prev.type != TOK_PAREN_CLOSE) {
-        __die("EOF while parsing function type params");
+        __die(
+            function ? "EOF while parsing function type params"
+                     : "EOF while parsing tuple items"
+        );
     }
+
+    return items;
+}
+
+static ast_typename* function_typename(parser_t* parser) {
+    expect(parser, TOK_PAREN_OPEN, "expected '(' after 'fn'");
+
+    vec_typename params = typename_tuple_items(parser, true);
 
     ast_typename* return_type;
     if (match(parser, TOK_ARROW_RIGHT)) {
         return_type = typename(parser);
     } else {
-        return_type = make_ast_typename(parser->allocator, TYPE_NAME_UNIT);
+        return_type = make_ast_typename_unit(parser->allocator);
     }
 
     return make_ast_typename_function(parser->allocator, params, return_type);
 }
 
 static ast_typename* typename_tuple(parser_t* parser) {
-    // FIXME: tuple syntax is not implemented yet,
-    // this exists only to be able to parse unit-type name '()'
-    expect(parser, TOK_PAREN_CLOSE, "Expected a ')'");
-
-    return make_ast_typename(parser->allocator, TYPE_NAME_UNIT);
+    vec_typename items = typename_tuple_items(parser, true);
+    return make_ast_typename_tuple(parser->allocator, items);
 }
 
 static ast_typename* typename(parser_t* parser) {
@@ -276,7 +281,7 @@ static ast_item_node* function_decl(parser_t* parser) {
     if (match(parser, TOK_ARROW_RIGHT)) {
         return_type = typename(parser);
     } else {
-        return_type = make_ast_typename(parser->allocator, TYPE_NAME_UNIT);
+        return_type = make_ast_typename_unit(parser->allocator);
     }
 
     expect(parser, TOK_BRACE_OPEN, "expected function body");
@@ -714,7 +719,7 @@ static ast_expr_node* lambda(parser_t* parser) {
     if (match(parser, TOK_ARROW_RIGHT)) {
         return_type = typename(parser);
     } else {
-        return_type = make_ast_typename(parser->allocator, TYPE_NAME_UNIT);
+        return_type = make_ast_typename_unit(parser->allocator);
     }
 
     expect(parser, TOK_BRACE_OPEN, "expected function body");

@@ -33,10 +33,21 @@ static void walk_string_type(
     printf("string");
 };
 
-static void walk_unit_type(
-    ast_typename_printer_t* _self, ast_typename_unit* _node
+static void walk_tuple_type(
+    ast_typename_printer_t* self, ast_typename_tuple* node
 ) {
-    printf("()");
+    putchar('(');
+
+    ast_typename** item;
+    vec_foreach(&node->items, item) {
+        ast_typename_printer_t_walk(self, *item);
+
+        if (i != node->items.len - 1) {
+            printf(", ");
+        }
+    }
+
+    putchar(')');
 }
 
 static void walk_function_type(
@@ -65,7 +76,7 @@ static void print_typename(ast_typename* node) {
         .walk_boolean_type = walk_boolean_type,
         .walk_number_type = walk_number_type,
         .walk_string_type = walk_string_type,
-        .walk_unit_type = walk_unit_type,
+        .walk_tuple_type = walk_tuple_type,
         .walk_function_type = walk_function_type,
     };
     ast_typename_printer_t_walk(&printer, node);
