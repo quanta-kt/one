@@ -145,7 +145,8 @@ static typeres* typeres_dup(allocator_t* allocator, typeres* src) {
         res->function.return_type =
             typeres_dup(allocator, src->function.return_type);
 
-        res->function.params = vec_typeres_dup(allocator, &src->function.params);
+        res->function.params =
+            vec_typeres_dup(allocator, &src->function.params);
     }
 
     return res;
@@ -448,10 +449,11 @@ static typeres* typecheck_op_plus(
         report_type_err("incompatible operands for '+'");
     }
 
+    typeres* ret = typeres_dup(allocator, left);
+
     switch (left->type) {
         case TYPE_RES_NUMBER:
         case TYPE_RES_STRING:
-            type = left->type;
             break;
 
         default:
@@ -460,21 +462,20 @@ static typeres* typecheck_op_plus(
             break;
     }
 
-    return make_typeres(allocator, err, type);
+    ret->is_err = err;
+
+    return ret;
 }
 
 static typeres* typecheck_op_minus(
     allocator_t* allocator, typeres* left, typeres* right
 ) {
-    typeres* ret = make_typeres(
-        allocator,
-        left->type != right->type || left->type != TYPE_RES_NUMBER,
-        left->type
-    );
+    typeres* ret = typeres_dup(allocator, left);
+    ret->is_err = left->type != right->type || left->type != TYPE_RES_NUMBER;
+
     if (ret->is_err) {
         report_type_err(
-            "incompatible operands for '-': only subtracting two numbers is "
-            "supported"
+            "incompatible operands for '-': only supported for numbers"
         );
     }
 
@@ -484,11 +485,9 @@ static typeres* typecheck_op_minus(
 static typeres* typecheck_op_bitwise_or(
     allocator_t* allocator, typeres* left, typeres* right
 ) {
-    typeres* ret = make_typeres(
-        allocator,
-        left->type != right->type || left->type != TYPE_RES_NUMBER,
-        left->type
-    );
+    typeres* ret = typeres_dup(allocator, left);
+    ret->is_err = left->type != right->type || left->type != TYPE_RES_NUMBER;
+
     if (ret->is_err) {
         report_type_err(
             "incompatible operands for '|': only supported for numbers"
@@ -501,11 +500,9 @@ static typeres* typecheck_op_bitwise_or(
 static typeres* typecheck_op_bitwise_and(
     allocator_t* allocator, typeres* left, typeres* right
 ) {
-    typeres* ret = make_typeres(
-        allocator,
-        left->type != right->type || left->type != TYPE_RES_NUMBER,
-        left->type
-    );
+    typeres* ret = typeres_dup(allocator, left);
+    ret->is_err = left->type != right->type || left->type != TYPE_RES_NUMBER;
+
     if (ret->is_err) {
         report_type_err(
             "incompatible operands for '&': only supported for numbers"
@@ -518,11 +515,9 @@ static typeres* typecheck_op_bitwise_and(
 static typeres* typecheck_op_xor(
     allocator_t* allocator, typeres* left, typeres* right
 ) {
-    typeres* ret = make_typeres(
-        allocator,
-        left->type != right->type || left->type != TYPE_RES_NUMBER,
-        left->type
-    );
+    typeres* ret = typeres_dup(allocator, left);
+    ret->is_err = left->type != right->type || left->type != TYPE_RES_NUMBER;
+
     if (ret->is_err) {
         report_type_err(
             "incompatible operands for '^': only supported for numbers"
@@ -570,11 +565,9 @@ static typeres* typecheck_op_mod(
 
     allocator_t* allocator, typeres* left, typeres* right
 ) {
-    typeres* ret = make_typeres(
-        allocator,
-        left->type != right->type || left->type != TYPE_RES_NUMBER,
-        left->type
-    );
+    typeres* ret = typeres_dup(allocator, left);
+    ret->is_err = left->type != right->type || left->type != TYPE_RES_NUMBER;
+
     if (ret->is_err) {
         report_type_err(
             "incompatible operands for '%%': only supported for numbers"
@@ -587,49 +580,31 @@ static typeres* typecheck_op_mod(
 static typeres* typecheck_op_mul(
     allocator_t* allocator, typeres* left, typeres* right
 ) {
-    bool err = left->type != right->type;
-    typeres_type type = TYPE_RES_UNKNOWN;
+    typeres* ret = typeres_dup(allocator, left);
+    ret->is_err = left->type != right->type || left->type != TYPE_RES_NUMBER;
 
-    if (err) {
-        report_type_err("incompatible operands for '*'");
+    if (ret->is_err) {
+        report_type_err(
+            "incompatible operands for '*': only supported for numbers"
+        );
     }
 
-    switch (left->type) {
-        case TYPE_RES_NUMBER:
-            type = left->type;
-            break;
-
-        default:
-            err = true;
-            report_type_err("'*' is only supported for numbers");
-            break;
-    }
-
-    return make_typeres(allocator, err, type);
+    return ret;
 }
 
 static typeres* typecheck_op_div(
     allocator_t* allocator, typeres* left, typeres* right
 ) {
-    bool err = left->type != right->type;
-    typeres_type type = TYPE_RES_UNKNOWN;
+    typeres* ret = typeres_dup(allocator, left);
+    ret->is_err = left->type != right->type || left->type != TYPE_RES_NUMBER;
 
-    if (err) {
-        report_type_err("incompatible operands for '/'");
+    if (ret->is_err) {
+        report_type_err(
+            "incompatible operands for '/': only supported for numbers"
+        );
     }
 
-    switch (left->type) {
-        case TYPE_RES_NUMBER:
-            type = left->type;
-            break;
-
-        default:
-            err = true;
-            report_type_err("'/' is only supported for numbers");
-            break;
-    }
-
-    return make_typeres(allocator, err, type);
+    return ret;
 }
 
 typedef typeres* typecheck_op_fn(
