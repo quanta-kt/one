@@ -150,6 +150,8 @@ static typeres* typeres_dup(allocator_t* allocator, typeres* src) {
     return res;
 }
 
+static bool vec_typeres_is_eq(vec_typeres* left, vec_typeres* right);
+
 /**
  * Checks if two types are equal (i.o.w compatible with each other)
  */
@@ -158,29 +160,43 @@ static bool typeres_is_eq(typeres* left, typeres* right) {
         return false;
     }
 
-    // types other than functions (i.e. primitives) are trivial:
-    // two primitives of the same type are always the same type.
-    if (left->type != TYPE_RES_FUNCTION) {
-        return true;
+    if (left->type == TYPE_RES_TUPLE) {
+        return vec_typeres_is_eq(&left->tuple.items, &right->tuple.items);
     }
 
-    // for functions, we first confirm that the arity and return type
-    // is same
-    if (left->function.params.len != right->function.params.len ||
-        !typeres_is_eq(
-            left->function.return_type,
-            right->function.return_type
-        )) {
+    if (left->type == TYPE_RES_FUNCTION) {
+        // Two function types are equivalent if their return type and parameters
+        // are.
+        return typeres_is_eq(
+                   left->function.return_type,
+                   right->function.return_type
+               ) &&
+               vec_typeres_is_eq(
+                   &left->function.params,
+                   &right->function.params
+               );
+    }
+
+    // For types other than tuples and functions, only equality of the base type
+    // matters.
+    return true;
+}
+
+/**
+ * Tests two typeres vectors for equality.
+ */
+static bool vec_typeres_is_eq(vec_typeres* left, vec_typeres* right) {
+    if (left->len != right->len) {
         return false;
     }
 
-    // since we know the arity of both the function types at this point
+    // since we know the length of both the vectors at this point
     // is equal, the indices should match up
-    for (size_t i = 0; i < left->function.params.len; i++) {
-        typeres* param_left = left->function.params.items[i];
-        typeres* param_right = right->function.params.items[i];
+    for (size_t i = 0; i < left->len; i++) {
+        typeres* item_left = left->items[i];
+        typeres* item_right = right->items[i];
 
-        if (!typeres_is_eq(param_left, param_right)) {
+        if (!typeres_is_eq(item_left, item_right)) {
             return false;
         }
     }
