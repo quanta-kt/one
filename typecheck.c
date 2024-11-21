@@ -132,7 +132,8 @@ static typeres* make_typeres_function(
 static typeres* typeres_dup(allocator_t* allocator, typeres* src) {
     typeres* res = ALLOC(allocator, typeres);
 
-    memcpy(res, src, sizeof(typeres));
+    res->is_err = src->is_err;
+    res->type = src->type;
 
     if (src->type == TYPE_RES_FUNCTION) {
         res->function.return_type =
