@@ -27,6 +27,10 @@
             typeof(*((v)->items)), \
             (v)->capacity          \
         );                         \
+                                   \
+        (v)->items = NULL;         \
+        (v)->len = 0;              \
+        (v)->capacity = 0;         \
     } while (0)
 
 #define vec_push(v, item)                                                  \
