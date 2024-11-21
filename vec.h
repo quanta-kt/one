@@ -50,7 +50,7 @@
                                                                            \
     } while (0);
 
-#define vec_get(v, inx) inx >= v->len ? NULL : &v->items[inx]
+#define vec_get(v, inx) inx >= (v)->len ? NULL : &(v)->items[inx]
 
 #define vec_foreach(v, item) \
     item = (v)->items;       \
