@@ -37,25 +37,16 @@ build/%.o: %.c $(HEADERS)
 	@mkdir -p build
 	$(CC) $(CFLAGS) -c $< -o $@
 
-
-TEST_DIR = t
-PYTHON = python3
-
-# Make lib.py available for import
-export PYTHONPATH = t
-
-TEST_FILES += $(TEST_DIR)/ast
-TEST_FILES += $(TEST_DIR)/typecheck
-
-test: $(OUTPUT)
-	$(PYTHON) -m pytest $(TEST_FILES)
-.PHONY: test
-
-clean-pyc:
-	rm -rf __pycache__
-	rm -rf .pytest_cache
-.PHONY: clean-pyc
-
-clean: clean-pyc
+clean: clean-test
 	rm -rf $(BUILD_DIR)
 .PHONY: clean
+
+
+TEST_DIRECTORY = t/
+test:
+	make -C $(TEST_DIRECTORY)
+.PHONY: test
+
+clean-test:
+	make -C $(TEST_DIRECTORY) clean
+.PHONY: clean-test
