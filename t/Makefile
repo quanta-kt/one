@@ -10,8 +10,18 @@ BUILD_DIR = ../build
 
 export PATH := $(BUILD_DIR):$(PATH)
 
-TEST_FILES += ast
-TEST_FILES += typecheck
+TEST_DIRECTORIES += ast
+TEST_DIRECTORIES += typecheck
+
+TEST_FILES = $(patsubst %, %/*.py, $(TEST_DIRECTORIES))
+
+TEST_TARGETS += $(TEST_DIRECTORIES)
+TEST_TARGETS += $(TEST_FILES)
+
+$(TEST_TARGETS):
+	$(PYTHON) -m pytest $@
+.PHONY: $(TEST_TARGETS)
+
 test:
 	$(PYTHON) -m pytest $(TEST_FILES)
 .PHONY: test
