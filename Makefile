@@ -3,6 +3,14 @@ all::
 CC = gcc
 CFLAGS = -g -Wextra -Werror
 
+BUILD_DIR = build
+TEST_DIRECTORY = t
+TEST_HELPER_BIN = $(BUILD_DIR)/test-helpers
+
+OUTPUT = $(BUILD_DIR)/onec
+
+export PATH := $(BUILD_DIR):$(PATH)
+
 SRCS += alloc.c
 SRCS += ast.c
 SRCS += ast_printer.c
@@ -21,11 +29,6 @@ HEADERS += vec.h
 
 OBJS = $(patsubst %.c, build/%.o, $(SRCS))
 
-BUILD_DIR = build
-OUTPUT = $(BUILD_DIR)/onec
-
-export PATH := $(BUILD_DIR):$(PATH)
-
 all:: $(OUTPUT)
 .PHONY: all
 
@@ -42,7 +45,6 @@ clean: clean-test
 .PHONY: clean
 
 
-TEST_DIRECTORY = t/
 test:
 	make -C $(TEST_DIRECTORY)
 .PHONY: test
