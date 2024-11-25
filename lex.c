@@ -85,7 +85,13 @@ static token token_num(lexer_t* lex) {
     char* start = lex->curr;
     char* end = start;
 
-    while (is_digit(*end) || *end == '.') end++;
+    bool seen_decimal_point = false;
+
+    while (is_digit(*end) || (!seen_decimal_point && *end == '.')) {
+        seen_decimal_point = seen_decimal_point || *end == '.';
+        end++;
+    }
+
     lex->curr = end;
 
     size_t span_size = end - start;
