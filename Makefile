@@ -11,31 +11,31 @@ OUTPUT = $(BUILD_DIR)/onec
 
 export PATH := $(BUILD_DIR):$(PATH)
 
-OBJ += alloc.o
-OBJ += ast.o
-OBJ += ast_printer.o
-OBJ += lex.o
-OBJ += main.o
-OBJ += typecheck.o
-OBJ += parser.o
-OBJ := $(addprefix $(BUILD_DIR)/,$(OBJ))
+LIB_OBJ += alloc.o
+LIB_OBJ += ast.o
+LIB_OBJ += ast_printer.o
+LIB_OBJ += lex.o
+LIB_OBJ += main.o
+LIB_OBJ += typecheck.o
+LIB_OBJ += parser.o
+LIB_OBJ := $(addprefix $(BUILD_DIR)/,$(LIB_OBJ))
 
-HEADERS += alloc.h
-HEADERS += ast.h
-HEADERS += ast_printer.h
-HEADERS += lex.h
-HEADERS += parser.h
-HEADERS += typecheck.h
-HEADERS += vec.h
+LIB_HEADERS += alloc.h
+LIB_HEADERS += ast.h
+LIB_HEADERS += ast_printer.h
+LIB_HEADERS += lex.h
+LIB_HEADERS += parser.h
+LIB_HEADERS += typecheck.h
+LIB_HEADERS += vec.h
 
 all:: $(OUTPUT)
 .PHONY: all
 
-$(OUTPUT): $(OBJ)
+$(OUTPUT): $(LIB_OBJ)
 	@mkdir -p build
-	$(CC) $(CFLAGS) $(OBJ) -o $(OUTPUT)
+	$(CC) $(CFLAGS) $(LIB_OBJ) -o $(OUTPUT)
 
-$(OBJ): build/%.o: %.c $(HEADERS)
+$(LIB_OBJ): build/%.o: %.c $(LIB_HEADERS)
 	@mkdir -p build
 	$(CC) $(CFLAGS) -c $< -o $@
 
