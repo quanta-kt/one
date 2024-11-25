@@ -85,23 +85,35 @@ static bool is_alpha(char c) {
 static bool is_alpha_num(char c) { return is_alpha(c) || is_digit(c); }
 
 static char peek(lexer_t* lex) { return *lex->curr; }
+static bool lex_eof(lexer_t* lex) { return peek(lex) == '\0'; }
+static char advance(lexer_t* lex) {
+    if (lex_eof(lex)) {
+        return '\0';
+    }
+
+    if (*lex->curr == '\n') {
+        lex->line++;
+        lex->col = 0;  // gets corrected to 1 below with 'col++'
+    }
+
+    lex->col++;
+
+    return *lex->curr++;
+}
 
 static token token_num(lexer_t* lex) {
     bool seen_decimal_point = false;
 
     while (is_digit(peek(lex)) || (!seen_decimal_point && peek(lex) == '.')) {
         seen_decimal_point = seen_decimal_point || peek(lex) == '.';
-        lex->curr++;
+        advance(lex);
     }
-
-    size_t span_size = lex->curr - lex->start;
-    lex->col = lex->start_col + span_size;
 
     return make_token(TOK_NUM, lex);
 }
 
 static token token_iden(lexer_t* lex) {
-    while (is_alpha_num(peek(lex))) lex->curr++;
+    while (is_alpha_num(peek(lex))) advance(lex);
     size_t len = lex->curr - lex->start;
 
     token_type tt = TOK_IDEN;
@@ -117,22 +129,12 @@ static token token_iden(lexer_t* lex) {
         }
     }
 
-    lex->col = lex->start_col + len;
-
     return make_token(tt, lex);
 }
 
-static bool lex_eof(lexer_t* lex) { return peek(lex) == '\0'; }
-
 static token_result token_str(lexer_t* lex) {
-    size_t line = lex->line;
-    size_t col = lex->col;
-
-    for (; !lex_eof(lex) && peek(lex) != '"'; lex->curr++, lex->col++) {
-        if (peek(lex) == '\n') {
-            lex->line++;
-            lex->col = 1;
-        }
+    while (!lex_eof(lex) && peek(lex) != '"') {
+        advance(lex);
     }
 
     if (peek(lex) != '"') {
@@ -143,21 +145,14 @@ static token_result token_str(lexer_t* lex) {
         ));
     }
 
-    lex->curr++;  // "
+    advance(lex);  // "
 
     return token_ok(make_token(TOK_STR, lex));
 }
 
 static void skip_whitespace(lexer_t* lex) {
     while (!lex_eof(lex) && isspace(peek(lex))) {
-        if (peek(lex) == '\n') {
-            lex->line++;
-            lex->col = 1;
-        } else {
-            lex->col++;
-        }
-
-        lex->curr++;
+        advance(lex);
     }
 }
 
@@ -191,8 +186,7 @@ token_result lex_advance(lexer_t* lex) {
         return token_ok(make_token(TOK_EOF, lex));
     }
 
-    char c = *lex->curr++;
-    lex->col++;
+    char c = advance(lex);
 
     if (is_alpha(c)) {
         return token_ok(token_iden(lex));
@@ -207,7 +201,7 @@ token_result lex_advance(lexer_t* lex) {
             return make_token_single_char(lex, TOK_PLUS);
         case '-': {
             if (peek(lex) == '>') {
-                lex->curr++;
+                advance(lex);
                 return token_ok(make_token(TOK_ARROW_RIGHT, lex));
             }
 
@@ -238,14 +232,14 @@ token_result lex_advance(lexer_t* lex) {
 
         case '=': {
             if (peek(lex) == '=') {
-                lex->curr++;
+                advance(lex);
                 return token_ok(make_token(TOK_EQ, lex));
             }
             return make_token_single_char(lex, TOK_ASSIGN);
         }
         case '!': {
             if (peek(lex) == '=') {
-                lex->curr++;
+                advance(lex);
                 return token_ok(make_token(TOK_NEQ, lex));
             }
             return make_token_single_char(lex, TOK_BANG);
@@ -253,7 +247,7 @@ token_result lex_advance(lexer_t* lex) {
 
         case '|': {
             if (peek(lex) == '|') {
-                lex->curr++;
+                advance(lex);
                 return token_ok(make_token(TOK_OR, lex));
             }
 
@@ -261,7 +255,7 @@ token_result lex_advance(lexer_t* lex) {
         }
         case '&': {
             if (peek(lex) == '&') {
-                lex->curr++;
+                advance(lex);
                 return token_ok(make_token(TOK_AND, lex));
             }
 
@@ -270,7 +264,7 @@ token_result lex_advance(lexer_t* lex) {
 
         case '>': {
             if (peek(lex) == '=') {
-                lex->curr++;
+                advance(lex);
                 return token_ok(make_token(TOK_GTEQ, lex));
             }
 
@@ -278,7 +272,7 @@ token_result lex_advance(lexer_t* lex) {
         }
         case '<': {
             if (peek(lex) == '=') {
-                lex->curr++;
+                advance(lex);
                 return token_ok(make_token(TOK_LTEQ, lex));
             }
 
@@ -289,5 +283,10 @@ token_result lex_advance(lexer_t* lex) {
             return token_str(lex);
     }
 
-    return token_err(make_lex_error(LEX_ERR_UNEXPECTED_CHAR, lex->curr++, 1));
+    token_result ret =
+        token_err(make_lex_error(LEX_ERR_UNEXPECTED_CHAR, lex->curr, 1));
+
+    advance(lex);
+
+    return ret;
 }
