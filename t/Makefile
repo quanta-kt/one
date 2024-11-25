@@ -13,6 +13,7 @@ export PATH := $(BUILD_DIR):$(TEST_HELPER_BIN):$(PATH)
 
 TEST_DIRECTORIES += ast
 TEST_DIRECTORIES += typecheck
+TEST_DIRECTORIES += lex
 
 TEST_FILES = $(patsubst %, %/*.py, $(TEST_DIRECTORIES))
 
