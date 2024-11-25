@@ -79,6 +79,9 @@ typedef struct {
     token_type type;
     char* span;
     size_t span_size;
+
+    size_t line;
+    size_t col;
 } token;
 
 typedef enum {
@@ -106,6 +109,9 @@ typedef struct {
     size_t size;
 
     char* curr;
+
+    size_t line;
+    size_t col;
 } lexer_t;
 
 lexer_t make_lexer(char* src, size_t size);
