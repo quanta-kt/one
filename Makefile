@@ -11,13 +11,14 @@ OUTPUT = $(BUILD_DIR)/onec
 
 export PATH := $(BUILD_DIR):$(PATH)
 
-SRCS += alloc.c
-SRCS += ast.c
-SRCS += ast_printer.c
-SRCS += lex.c
-SRCS += main.c
-SRCS += typecheck.c
-SRCS += parser.c
+OBJ += alloc.o
+OBJ += ast.o
+OBJ += ast_printer.o
+OBJ += lex.o
+OBJ += main.o
+OBJ += typecheck.o
+OBJ += parser.o
+OBJ := $(addprefix $(BUILD_DIR)/,$(OBJ))
 
 HEADERS += alloc.h
 HEADERS += ast.h
@@ -27,16 +28,14 @@ HEADERS += parser.h
 HEADERS += typecheck.h
 HEADERS += vec.h
 
-OBJS = $(patsubst %.c, build/%.o, $(SRCS))
-
 all:: $(OUTPUT)
 .PHONY: all
 
-$(OUTPUT): $(OBJS)
+$(OUTPUT): $(OBJ)
 	@mkdir -p build
-	$(CC) $(CFLAGS) $(OBJS) -o $(OUTPUT)
+	$(CC) $(CFLAGS) $(OBJ) -o $(OUTPUT)
 
-build/%.o: %.c $(HEADERS)
+$(OBJ): build/%.o: %.c $(HEADERS)
 	@mkdir -p build
 	$(CC) $(CFLAGS) -c $< -o $@
 
