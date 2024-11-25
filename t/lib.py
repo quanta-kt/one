@@ -52,3 +52,18 @@ def typecheck_passes(code: str) -> bool:
     proc.stdin.close()
 
     return proc.wait() == 0
+
+def code2token_list(code: str) -> str:
+    """
+    Invokes code2token_list that in turn tokenizes
+    the code with the lexer and returns string with
+    new-line separated list of tokens.
+    """
+
+    proc = subprocess.Popen(
+        ["code2token-list", code],
+        stdout=subprocess.PIPE,
+    )
+
+    proc.wait()
+    return proc.stdout.read().decode()
