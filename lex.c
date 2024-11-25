@@ -110,19 +110,25 @@ static bool match(lexer_t* lex, char c) {
     return ret;
 }
 
-static token token_num(lexer_t* lex) {
-    bool seen_decimal_point = false;
+typedef bool match_fn(char);
 
-    while (is_digit(peek(lex)) || (!seen_decimal_point && peek(lex) == '.')) {
-        seen_decimal_point = seen_decimal_point || peek(lex) == '.';
+static void advance_while(lexer_t* lex, match_fn* predicate) {
+    while (!lex_eof(lex) && predicate(peek(lex))) {
         advance(lex);
+    }
+}
+
+static token token_num(lexer_t* lex) {
+    advance_while(lex, is_digit);
+    if (match(lex, '.')) {
+        advance_while(lex, is_digit);
     }
 
     return make_token(TOK_NUM, lex);
 }
 
 static token token_iden(lexer_t* lex) {
-    while (is_alpha_num(peek(lex))) advance(lex);
+    advance_while(lex, is_alpha_num);
     size_t len = lex->curr - lex->start;
 
     token_type tt = TOK_IDEN;
