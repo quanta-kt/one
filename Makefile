@@ -15,7 +15,6 @@ LIB_OBJ += alloc.o
 LIB_OBJ += ast.o
 LIB_OBJ += ast_printer.o
 LIB_OBJ += lex.o
-LIB_OBJ += main.o
 LIB_OBJ += typecheck.o
 LIB_OBJ += parser.o
 LIB_OBJ := $(addprefix $(BUILD_DIR)/,$(LIB_OBJ))
@@ -28,14 +27,17 @@ LIB_HEADERS += parser.h
 LIB_HEADERS += typecheck.h
 LIB_HEADERS += vec.h
 
+ONEC_OBJ += $(BUILD_DIR)/main.o
+ONEC_OBJ += $(LIB_OBJ)
+
 all:: $(OUTPUT)
 .PHONY: all
 
-$(OUTPUT): $(LIB_OBJ)
+$(OUTPUT): $(ONEC_OBJ)
 	@mkdir -p build
-	$(CC) $(CFLAGS) $(LIB_OBJ) -o $(OUTPUT)
+	$(CC) $(CFLAGS) $(ONEC_OBJ) -o $(OUTPUT)
 
-$(LIB_OBJ): build/%.o: %.c $(LIB_HEADERS)
+$(ONEC_OBJ): build/%.o: %.c $(LIB_HEADERS)
 	@mkdir -p build
 	$(CC) $(CFLAGS) -c $< -o $@
 
