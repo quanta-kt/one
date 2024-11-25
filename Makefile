@@ -46,6 +46,25 @@ clean: clean-test
 .PHONY: clean
 
 
+TEST_HELPER_OBJS += code2token-list.o
+TEST_HELPER_OBJS := $(addprefix $(TEST_HELPER_BIN)/,$(TEST_HELPER_OBJS))
+
+$(TEST_HELPER_OBJS): $(TEST_HELPER_BIN)/%.o: \
+	$(TEST_DIRECTORY)/helpers/%.c \
+	$(LIB_OBJ) \
+	$(LIB_OBJ) $(LIB_HEADER)
+
+	@mkdir -p $(TEST_HELPER_BIN)
+	$(CC) $(CFLAGS) -I. -c $< -o $@
+all:: $(TEST_HELPER_OBJS)
+test-helpers: $(TEST_HELPER_OBJS)
+
+TEST_HELPER_PROGRAMS = $(TEST_HELPER_OBJS:.o=)
+
+$(TEST_HELPER_PROGRAMS): %: %.o
+	$(CC) $(CFLAGS) $< $(LIB_OBJ) -o $@
+all:: $(TEST_HELPER_PROGRAMS)
+
 test:
 	make -C $(TEST_DIRECTORY)
 .PHONY: test

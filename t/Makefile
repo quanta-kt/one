@@ -7,8 +7,9 @@ CC = gcc
 PYTHON = python3
 
 BUILD_DIR = ../build
+TEST_HELPER_BIN = $(BUILD_DIR)/test-helpers
 
-export PATH := $(BUILD_DIR):$(PATH)
+export PATH := $(BUILD_DIR):$(TEST_HELPER_BIN):$(PATH)
 
 TEST_DIRECTORIES += ast
 TEST_DIRECTORIES += typecheck
