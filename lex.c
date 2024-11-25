@@ -101,6 +101,15 @@ static char advance(lexer_t* lex) {
     return *lex->curr++;
 }
 
+static bool match(lexer_t* lex, char c) {
+    bool ret = peek(lex) == c;
+    if (ret) {
+        advance(lex);
+    }
+
+    return ret;
+}
+
 static token token_num(lexer_t* lex) {
     bool seen_decimal_point = false;
 
@@ -137,15 +146,13 @@ static token_result token_str(lexer_t* lex) {
         advance(lex);
     }
 
-    if (peek(lex) != '"') {
+    if (!match(lex, '"')) {
         return token_err(make_lex_error(
             LEX_ERR_UNTERMINATED_STRING,
             lex->start,
             lex->curr - lex->start
         ));
     }
-
-    advance(lex);  // "
 
     return token_ok(make_token(TOK_STR, lex));
 }
@@ -200,8 +207,7 @@ token_result lex_advance(lexer_t* lex) {
         case '+':
             return make_token_single_char(lex, TOK_PLUS);
         case '-': {
-            if (peek(lex) == '>') {
-                advance(lex);
+            if (match(lex, '>')) {
                 return token_ok(make_token(TOK_ARROW_RIGHT, lex));
             }
 
@@ -231,31 +237,27 @@ token_result lex_advance(lexer_t* lex) {
             return make_token_single_char(lex, TOK_CARET);
 
         case '=': {
-            if (peek(lex) == '=') {
-                advance(lex);
+            if (match(lex, '=')) {
                 return token_ok(make_token(TOK_EQ, lex));
             }
             return make_token_single_char(lex, TOK_ASSIGN);
         }
         case '!': {
-            if (peek(lex) == '=') {
-                advance(lex);
+            if (match(lex, '=')) {
                 return token_ok(make_token(TOK_NEQ, lex));
             }
             return make_token_single_char(lex, TOK_BANG);
         }
 
         case '|': {
-            if (peek(lex) == '|') {
-                advance(lex);
+            if (match(lex, '|')) {
                 return token_ok(make_token(TOK_OR, lex));
             }
 
             return make_token_single_char(lex, TOK_PIPE);
         }
         case '&': {
-            if (peek(lex) == '&') {
-                advance(lex);
+            if (match(lex, '&')) {
                 return token_ok(make_token(TOK_AND, lex));
             }
 
@@ -263,16 +265,14 @@ token_result lex_advance(lexer_t* lex) {
         }
 
         case '>': {
-            if (peek(lex) == '=') {
-                advance(lex);
+            if (match(lex, '=')) {
                 return token_ok(make_token(TOK_GTEQ, lex));
             }
 
             return make_token_single_char(lex, TOK_GT);
         }
         case '<': {
-            if (peek(lex) == '=') {
-                advance(lex);
+            if (match(lex, '=')) {
                 return token_ok(make_token(TOK_LTEQ, lex));
             }
 
