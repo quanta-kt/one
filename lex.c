@@ -43,16 +43,19 @@ const size_t keyword_table_len =
 
 #undef TABLE_ENTRY
 
-static token make_token(
-    token_type tt, char* span, size_t size, size_t line, size_t col
-) {
-    return (token){
+static token make_token(token_type tt, lexer_t* lex) {
+    token tok = (token){
         .type = tt,
-        .span = span,
-        .span_size = size,
-        .line = line,
-        .col = col,
+        .span = lex->start,
+        .span_size = lex->curr - lex->start,
+        .line = lex->start_line,
+        .col = lex->start_col,
     };
+
+    lex->start = lex->curr;
+    lex->start_col = lex->col;
+    lex->start_line = lex->line;
+    return tok;
 }
 
 static lex_error make_lex_error(lex_error_type type, char* span, size_t size) {
@@ -82,33 +85,22 @@ static bool is_alpha(char c) {
 static bool is_alpha_num(char c) { return is_alpha(c) || is_digit(c); }
 
 static token token_num(lexer_t* lex) {
-    char* start = lex->curr;
-    char* end = start;
-
     bool seen_decimal_point = false;
 
-    while (is_digit(*end) || (!seen_decimal_point && *end == '.')) {
-        seen_decimal_point = seen_decimal_point || *end == '.';
-        end++;
+    while (is_digit(*lex->curr) || (!seen_decimal_point && *lex->curr == '.')) {
+        seen_decimal_point = seen_decimal_point || *lex->curr == '.';
+        lex->curr++;
     }
 
-    lex->curr = end;
+    size_t span_size = lex->curr - lex->start;
+    lex->col = lex->start_col + span_size;
 
-    size_t span_size = end - start;
-    token ret = make_token(TOK_NUM, start, span_size, lex->line, lex->col);
-
-    lex->col += span_size;
-
-    return ret;
+    return make_token(TOK_NUM, lex);
 }
 
 static token token_iden(lexer_t* lex) {
-    char* start = lex->curr;
-    char* end = start;
-
-    while (is_alpha_num(*end)) end++;
-    lex->curr = end;
-    size_t len = end - start;
+    while (is_alpha_num(*lex->curr)) lex->curr++;
+    size_t len = lex->curr - lex->start;
 
     token_type tt = TOK_IDEN;
 
@@ -117,26 +109,20 @@ static token token_iden(lexer_t* lex) {
 
         if (kw.keyword_len != len) continue;
 
-        if (memcmp(start, kw.keyword, kw.keyword_len) == 0) {
+        if (memcmp(lex->start, kw.keyword, kw.keyword_len) == 0) {
             tt = kw.tt;
             break;
         }
     }
 
-    token ret = make_token(tt, start, len, lex->line, lex->col);
+    lex->col = lex->start_col + len;
 
-    lex->col += len;
-
-    return ret;
+    return make_token(tt, lex);
 }
 
 static bool lex_eof(lexer_t* lex) { return *lex->curr == '\0'; }
 
 static token_result token_str(lexer_t* lex) {
-    char* start = lex->curr;
-
-    lex->curr++;  // "
-
     size_t line = lex->line;
     size_t col = lex->col;
 
@@ -150,14 +136,14 @@ static token_result token_str(lexer_t* lex) {
     if (*lex->curr != '"') {
         return token_err(make_lex_error(
             LEX_ERR_UNTERMINATED_STRING,
-            start,
-            lex->curr - start
+            lex->start,
+            lex->curr - lex->start
         ));
     }
 
     lex->curr++;  // "
 
-    return token_ok(make_token(TOK_STR, start, lex->curr - start, line, col));
+    return token_ok(make_token(TOK_STR, lex));
 }
 
 static void skip_whitespace(lexer_t* lex) {
@@ -180,22 +166,31 @@ lexer_t make_lexer(char* src, size_t size) {
         .size = size,
         .line = 1,
         .col = 1,
+
+        .start = src,
+        .start_line = 1,
+        .start_col = 1,
     };
 }
 
 static token_result make_token_single_char(lexer_t* lex, token_type tt) {
-    size_t col = lex->col++;
-    return token_ok(make_token(tt, lex->curr++, 1, lex->line, col));
+    size_t col = lex->col;
+    return token_ok(make_token(tt, lex));
 }
 
 token_result lex_advance(lexer_t* lex) {
     skip_whitespace(lex);
 
+    lex->start_line = lex->line;
+    lex->start_col = lex->col;
+    lex->start = lex->curr;
+
     if (lex_eof(lex)) {
-        return token_ok(make_token(TOK_EOF, NULL, 0, lex->line, lex->col));
+        return token_ok(make_token(TOK_EOF, lex));
     }
 
-    char c = *lex->curr;
+    char c = *lex->curr++;
+    lex->col++;
 
     if (is_alpha(c)) {
         return token_ok(token_iden(lex));
@@ -209,15 +204,9 @@ token_result lex_advance(lexer_t* lex) {
         case '+':
             return make_token_single_char(lex, TOK_PLUS);
         case '-': {
-            if (lex->curr[1] == '>') {
-                lex->curr += 2;
-                return token_ok(make_token(
-                    TOK_ARROW_RIGHT,
-                    lex->curr,
-                    2,
-                    lex->line,
-                    lex->col
-                ));
+            if (lex->curr[0] == '>') {
+                lex->curr++;
+                return token_ok(make_token(TOK_ARROW_RIGHT, lex));
             }
 
             return make_token_single_char(lex, TOK_MINUS);
@@ -246,61 +235,49 @@ token_result lex_advance(lexer_t* lex) {
             return make_token_single_char(lex, TOK_CARET);
 
         case '=': {
-            if (lex->curr[1] == '=') {
-                lex->curr += 2;
-                return token_ok(
-                    make_token(TOK_EQ, lex->curr, 2, lex->line, lex->col)
-                );
+            if (lex->curr[0] == '=') {
+                lex->curr++;
+                return token_ok(make_token(TOK_EQ, lex));
             }
             return make_token_single_char(lex, TOK_ASSIGN);
         }
         case '!': {
-            if (lex->curr[1] == '=') {
-                lex->curr += 2;
-                return token_ok(
-                    make_token(TOK_NEQ, lex->curr, 2, lex->line, lex->col)
-                );
+            if (lex->curr[0] == '=') {
+                lex->curr++;
+                return token_ok(make_token(TOK_NEQ, lex));
             }
             return make_token_single_char(lex, TOK_BANG);
         }
 
         case '|': {
-            if (lex->curr[1] == '|') {
-                lex->curr += 2;
-                return token_ok(
-                    make_token(TOK_OR, lex->curr, 2, lex->line, lex->col)
-                );
+            if (lex->curr[0] == '|') {
+                lex->curr++;
+                return token_ok(make_token(TOK_OR, lex));
             }
 
             return make_token_single_char(lex, TOK_PIPE);
         }
         case '&': {
-            if (lex->curr[1] == '&') {
-                lex->curr += 2;
-                return token_ok(
-                    make_token(TOK_AND, lex->curr, 2, lex->line, lex->col)
-                );
+            if (lex->curr[0] == '&') {
+                lex->curr++;
+                return token_ok(make_token(TOK_AND, lex));
             }
 
             return make_token_single_char(lex, TOK_AMP);
         }
 
         case '>': {
-            if (lex->curr[1] == '=') {
-                lex->curr += 2;
-                return token_ok(
-                    make_token(TOK_GTEQ, lex->curr, 2, lex->line, lex->col)
-                );
+            if (lex->curr[0] == '=') {
+                lex->curr++;
+                return token_ok(make_token(TOK_GTEQ, lex));
             }
 
             return make_token_single_char(lex, TOK_GT);
         }
         case '<': {
-            if (lex->curr[1] == '=') {
-                lex->curr += 2;
-                return token_ok(
-                    make_token(TOK_LTEQ, lex->curr, 2, lex->line, lex->col)
-                );
+            if (lex->curr[0] == '=') {
+                lex->curr++;
+                return token_ok(make_token(TOK_LTEQ, lex));
             }
 
             return make_token_single_char(lex, TOK_LT);

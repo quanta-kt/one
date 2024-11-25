@@ -110,6 +110,21 @@ typedef struct {
 
     char* curr;
 
+    /**
+     * Start of the next token that will be emitted.
+     */
+    char* start;
+
+    /**
+     * Line number at 'start'
+     */
+    size_t start_line;
+
+    /**
+     * Column number at 'start'
+     */
+    size_t start_col;
+
     size_t line;
     size_t col;
 } lexer_t;
