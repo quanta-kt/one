@@ -84,11 +84,13 @@ static bool is_alpha(char c) {
 
 static bool is_alpha_num(char c) { return is_alpha(c) || is_digit(c); }
 
+static char peek(lexer_t* lex) { return *lex->curr; }
+
 static token token_num(lexer_t* lex) {
     bool seen_decimal_point = false;
 
-    while (is_digit(*lex->curr) || (!seen_decimal_point && *lex->curr == '.')) {
-        seen_decimal_point = seen_decimal_point || *lex->curr == '.';
+    while (is_digit(peek(lex)) || (!seen_decimal_point && peek(lex) == '.')) {
+        seen_decimal_point = seen_decimal_point || peek(lex) == '.';
         lex->curr++;
     }
 
@@ -99,7 +101,7 @@ static token token_num(lexer_t* lex) {
 }
 
 static token token_iden(lexer_t* lex) {
-    while (is_alpha_num(*lex->curr)) lex->curr++;
+    while (is_alpha_num(peek(lex))) lex->curr++;
     size_t len = lex->curr - lex->start;
 
     token_type tt = TOK_IDEN;
@@ -120,20 +122,20 @@ static token token_iden(lexer_t* lex) {
     return make_token(tt, lex);
 }
 
-static bool lex_eof(lexer_t* lex) { return *lex->curr == '\0'; }
+static bool lex_eof(lexer_t* lex) { return peek(lex) == '\0'; }
 
 static token_result token_str(lexer_t* lex) {
     size_t line = lex->line;
     size_t col = lex->col;
 
-    for (; !lex_eof(lex) && *lex->curr != '"'; lex->curr++, lex->col++) {
-        if (*lex->curr == '\n') {
+    for (; !lex_eof(lex) && peek(lex) != '"'; lex->curr++, lex->col++) {
+        if (peek(lex) == '\n') {
             lex->line++;
             lex->col = 1;
         }
     }
 
-    if (*lex->curr != '"') {
+    if (peek(lex) != '"') {
         return token_err(make_lex_error(
             LEX_ERR_UNTERMINATED_STRING,
             lex->start,
@@ -147,8 +149,8 @@ static token_result token_str(lexer_t* lex) {
 }
 
 static void skip_whitespace(lexer_t* lex) {
-    while (!lex_eof(lex) && isspace(*lex->curr)) {
-        if (*(lex->curr) == '\n') {
+    while (!lex_eof(lex) && isspace(peek(lex))) {
+        if (peek(lex) == '\n') {
             lex->line++;
             lex->col = 1;
         } else {
@@ -204,7 +206,7 @@ token_result lex_advance(lexer_t* lex) {
         case '+':
             return make_token_single_char(lex, TOK_PLUS);
         case '-': {
-            if (lex->curr[0] == '>') {
+            if (peek(lex) == '>') {
                 lex->curr++;
                 return token_ok(make_token(TOK_ARROW_RIGHT, lex));
             }
@@ -235,14 +237,14 @@ token_result lex_advance(lexer_t* lex) {
             return make_token_single_char(lex, TOK_CARET);
 
         case '=': {
-            if (lex->curr[0] == '=') {
+            if (peek(lex) == '=') {
                 lex->curr++;
                 return token_ok(make_token(TOK_EQ, lex));
             }
             return make_token_single_char(lex, TOK_ASSIGN);
         }
         case '!': {
-            if (lex->curr[0] == '=') {
+            if (peek(lex) == '=') {
                 lex->curr++;
                 return token_ok(make_token(TOK_NEQ, lex));
             }
@@ -250,7 +252,7 @@ token_result lex_advance(lexer_t* lex) {
         }
 
         case '|': {
-            if (lex->curr[0] == '|') {
+            if (peek(lex) == '|') {
                 lex->curr++;
                 return token_ok(make_token(TOK_OR, lex));
             }
@@ -258,7 +260,7 @@ token_result lex_advance(lexer_t* lex) {
             return make_token_single_char(lex, TOK_PIPE);
         }
         case '&': {
-            if (lex->curr[0] == '&') {
+            if (peek(lex) == '&') {
                 lex->curr++;
                 return token_ok(make_token(TOK_AND, lex));
             }
@@ -267,7 +269,7 @@ token_result lex_advance(lexer_t* lex) {
         }
 
         case '>': {
-            if (lex->curr[0] == '=') {
+            if (peek(lex) == '=') {
                 lex->curr++;
                 return token_ok(make_token(TOK_GTEQ, lex));
             }
@@ -275,7 +277,7 @@ token_result lex_advance(lexer_t* lex) {
             return make_token_single_char(lex, TOK_GT);
         }
         case '<': {
-            if (lex->curr[0] == '=') {
+            if (peek(lex) == '=') {
                 lex->curr++;
                 return token_ok(make_token(TOK_LTEQ, lex));
             }
