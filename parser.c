@@ -710,7 +710,7 @@ static ast_expr_node* str(parser_t* parser) {
             continue;
         }
 
-        switch (tok.span[i]) {
+        switch (tok.span[i++]) {
             SUBSTITUTE('\\', '\\')
             SUBSTITUTE('a', '\a')
             SUBSTITUTE('b', '\b')
