@@ -148,11 +148,29 @@ static token token_iden(lexer_t* lex) {
 }
 
 static token_result token_str(lexer_t* lex) {
-    while (!lex_eof(lex) && peek(lex) != '"') {
-        advance(lex);
+    // was this string terminated by a closing '"'?
+    bool terminated = false;
+
+    while (!lex_eof(lex)) {
+        switch (advance(lex)) {
+            case '\\': {
+                advance(lex);
+                break;
+            }
+
+            case '"': {
+                terminated = true;
+                goto exit_loop;
+            }
+        }
+
+        continue;
+
+    exit_loop:
+        break;
     }
 
-    if (!match(lex, '"')) {
+    if (!terminated) {
         return token_err(make_lex_error(
             LEX_ERR_UNTERMINATED_STRING,
             lex->start,
