@@ -147,7 +147,7 @@ typedef struct _typeres {
 } typeres;
 
 static typeres* make_typeres(
-    allocator_t* allocator, bool is_err, ast_typename_type type
+    allocator_t* allocator, bool is_err, typeres_type type
 ) {
     typeres* res = ALLOC(allocator, typeres);
     res->is_err = is_err;
