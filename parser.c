@@ -136,7 +136,7 @@ static token advance(parser_t* parser) {
     parser->prev = parser->curr;
 
     token_result res;
-    while (!(res = lex_advance(parser->lexer)).ok) {
+    while (!(res = lex_advance(&parser->lexer)).ok) {
         lex_e_print(res.e);
     }
 
