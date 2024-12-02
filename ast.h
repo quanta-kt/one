@@ -395,6 +395,8 @@ ast_item_node* make_ast_function(
 
 void free_ast_item(allocator_t* allocator, ast_item_node* node);
 
+void free_ast(allocator_t* allocator, ast_item_node* ast);
+
 #define AST_ITEM_WALKER(name, return_type, ctx_type)                       \
     struct _##name;                                                        \
     typedef struct _##name {                                               \

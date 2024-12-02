@@ -391,3 +391,14 @@ void free_ast_item(allocator_t* allocator, ast_item_node* node) {
 
     FREE(allocator, node, ast_item_node);
 }
+
+void free_ast(allocator_t* allocator, ast_item_node* ast) {
+    ast_item_node* curr = ast;
+
+    while (curr != NULL) {
+        ast_item_node* next = curr->next;
+        free_ast_item(allocator, curr);
+
+        curr = next;
+    }
+}

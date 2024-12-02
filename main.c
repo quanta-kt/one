@@ -114,7 +114,7 @@ int run_repl(struct compiler_args* args) {
             }
         }
 
-        free_ast_item(allocator, ast);
+        free_ast(allocator, ast);
     }
 
     return 0;
@@ -145,7 +145,7 @@ int compile_file(struct compiler_args* args, FILE* file) {
     }
 
 cleanup:
-    free_ast_item(allocator, ast);
+    free_ast(allocator, ast);
     free(buf);
 
     return ret;
