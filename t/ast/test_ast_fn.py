@@ -1,4 +1,5 @@
 from lib import code2sexpr, invoke_onec
+import subprocess
 
 
 def test_fn():
@@ -19,11 +20,21 @@ def test_fn():
 
 
 def test_empty_program_is_valid():
-    output, exit_code = invoke_onec(["--s-expr"], "")
-    assert output == ""
-    assert exit_code == 0
+    proc = subprocess.Popen(
+        ["code2sexpr", ""],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+
+    assert proc.wait() == 0
+    assert proc.stdout.read().decode() == ""
 
     # single (invalid) character program must fail to parse
-    output, exit_code = invoke_onec(["--s-expr"], "    a")
-    assert output == ""
-    assert exit_code == 1
+    proc = subprocess.Popen(
+        ["code2sexpr", "       a"],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+
+    assert proc.wait() == 1
+    assert proc.stdout.read().decode() == ""

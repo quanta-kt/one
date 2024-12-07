@@ -18,11 +18,15 @@ def invoke_onec(args: list[str], stdin: str) -> tuple[str, int]:
 
 def code2sexpr(code: str) -> str:
     """
-    Invokes onec for converting `code` into a S-expressions.
+    Converts 'code' to an S-expression.
     """
+    proc = subprocess.Popen(
+        ["code2sexpr", code],
+        stdout=subprocess.PIPE,
+    )
 
-    stdout, _ = invoke_onec(["--s-expr"], f"{code}\n")
-    return stdout.strip()
+    proc.wait()
+    return proc.stdout.read().decode().strip()
 
 
 def stmt2sexpr(stmt: str) -> str:
