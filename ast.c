@@ -350,6 +350,7 @@ ast_item_node* make_ast_function(
     node->function.params = params;
     node->function.body = body;
     node->function.return_type = return_type;
+    node->next = NULL;
 
     return node;
 }
