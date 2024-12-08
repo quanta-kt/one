@@ -30,7 +30,14 @@ struct allocation* find(void* ptr) {
 #endif  // TRACE_ALLOC
 
 void* gpa_alloc(void* _ctx, void* ptr, size_t _old_size, size_t new_size) {
-    void* new_ptr = realloc(ptr, new_size);
+    void* new_ptr;
+
+    if (new_size == 0) {
+        free(ptr);
+        new_ptr = NULL;
+    } else {
+        new_ptr = realloc(ptr, new_size);
+    }
 
 #ifdef TRACE_ALLOC
     if (_old_size == 0 && new_size > 0) {
