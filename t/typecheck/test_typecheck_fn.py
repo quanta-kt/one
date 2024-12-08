@@ -20,6 +20,16 @@ def test_fn_param_in_scope():
     }
     """)
 
+def test_function_environments_are_isolated():
+    assert not typecheck_passes("""
+    fn foo() {
+        let a: string;
+    }
+
+    fn bar() {
+        let b: string = a;
+    }
+    """)
 
 def test_empty_code_is_valid():
     assert typecheck_passes("")

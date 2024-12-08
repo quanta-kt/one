@@ -1105,13 +1105,14 @@ int walk_function(ast_item_tc_t* self, ast_node_function* fn) {
         curr = curr->next;
     }
 
+    bool ret = true;
     if (fn->body != NULL) {
-        return typecheck_stmt_list(self->ctx, fn->body);
+        ret = typecheck_stmt_list(self->ctx, fn->body);
     }
 
     environment_pop(self->ctx->allocator, &self->ctx->env);
 
-    return true;
+    return ret;
 }
 
 ast_item_tc_t make_item_tc(tc_ctx* ctx) {
