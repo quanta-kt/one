@@ -82,7 +82,7 @@ size_t read_all(FILE* in, char** ptr) {
 }
 
 int run_repl(struct compiler_args* args) {
-    char* line;
+    char* line = NULL;
     size_t len;
 
     allocator_t* allocator = gpa();
