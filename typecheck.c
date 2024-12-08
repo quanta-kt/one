@@ -375,6 +375,7 @@ static typeres* make_typeres_from_ast(
             res->type = TYPE_RES_INTEGER;
             res->integer.is_signed = typename->as.integer.is_signed;
             res->integer.size = typename->as.integer.size;
+            res->integer.default_until_inferred = false;
             break;
         }
         case TYPE_NAME_STRING: {
