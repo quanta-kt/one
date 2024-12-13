@@ -13,16 +13,16 @@ typedef struct {
 } allocator_t;
 
 #define ALLOC(allocator, type) \
-    ((type*)(allocator)->alloc((allocator)->ctx, NULL, 0, sizeof(type)))
+    ((allocator)->alloc((allocator)->ctx, NULL, 0, sizeof(type)))
 #define FREE(allocator, ptr, type) \
-    ((type*)(allocator)->alloc((allocator)->ctx, ptr, sizeof(type), 0))
+    ((allocator)->alloc((allocator)->ctx, ptr, sizeof(type), 0))
 
 #define ALLOC_ARRAY(allocator, type, count) \
-    ((type*)(allocator)->alloc((allocator)->ctx, NULL, 0, sizeof(type) * count))
+    ((allocator)->alloc((allocator)->ctx, NULL, 0, sizeof(type) * count))
 #define FREE_ARRAY(allocator, ptr, type, count) \
-    ((type*)(allocator)->alloc((allocator)->ctx, ptr, sizeof(type) * count, 0))
+    ((allocator)->alloc((allocator)->ctx, ptr, sizeof(type) * count, 0))
 #define RESIZE_ARRAY(allocator, ptr, type, old_count, new_count) \
-    ((type*)(allocator)->alloc(                                  \
+    ((allocator)->alloc(                                         \
         (allocator)->ctx,                                        \
         ptr,                                                     \
         sizeof(type) * old_count,                                \
