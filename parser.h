@@ -6,6 +6,8 @@
 #include "alloc.h"
 #include "ast.h"
 
-ast_item_node* parse(allocator_t* allocator, char* src, size_t src_len);
+bool parse(
+    allocator_t* allocator, char* src, size_t src_len, ast_item_node** out
+);
 
 #endif  // PARSER_H
