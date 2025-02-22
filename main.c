@@ -88,15 +88,28 @@ int run_repl(struct compiler_args* args) {
     allocator_t* allocator = gpa();
 
     while (getline(&line, &len, stdin) != -1) {
-        ast_item_node* ast = parse(allocator, line, len);
+        ast_item_node* ast;
 
-        if (typecheck(allocator, ast)) {
-            if (!args->typecheck_only) {
-                fprintf(stderr, "NOT IMPLEMENTED: Code execution is WIP.\n");
-                exit(1);
-            }
+        bool has_error = false;
+
+        if (!parse(allocator, line, len, &ast)) {
+            has_error = true;
         }
 
+        if (!typecheck(allocator, ast)) {
+            has_error = true;
+        }
+
+        /*
+         * We do not want the code to execute when there was an error
+         * during parsing or typechecking.
+         */
+        if (!has_error || !args->typecheck_only) {
+            fprintf(stderr, "NOT IMPLEMENTED: Code execution is WIP.\n");
+            exit(1);
+        }
+
+    cleanup:
         free_ast(allocator, ast);
     }
 
@@ -111,14 +124,21 @@ int compile_file(struct compiler_args* args, FILE* file) {
 
     allocator_t* allocator = gpa();
 
-    ast_item_node* ast = parse(allocator, buf, len);
+    ast_item_node* ast;
+
+    if (!parse(allocator, buf, len, &ast)) {
+        ret = 1;
+    }
 
     if (!typecheck(allocator, ast)) {
         ret = 1;
-        goto cleanup;
     }
 
-    if (!args->typecheck_only) {
+    /*
+     * We do not want to proceed with compiling if there was an error
+     * during parsing or typechecking.
+     */
+    if (ret != 0 || !args->typecheck_only) {
         fprintf(stderr, "NOT IMPLEMENTED: Code execution is WIP.\n");
         ret = 2;
     }
