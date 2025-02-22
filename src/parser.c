@@ -16,6 +16,9 @@ typedef struct {
 
     ast_item_node* item_head;
     ast_item_node* item_tail;
+
+    /* Was there *any* error reported while parsing the code? */
+    bool has_error;
 } parser_t;
 
 static ast_typename* function_typename(parser_t* parser);
@@ -141,6 +144,8 @@ static parser_t make_parser(allocator_t* allocator, lexer_t lexer) {
 
         .item_head = NULL,
         .item_tail = NULL,
+
+        .has_error = false,
     };
 }
 
@@ -827,7 +832,9 @@ static ast_expr_node* lambda(parser_t* parser) {
     return make_ast_lambda(parser->allocator, params_list, body, return_type);
 }
 
-ast_item_node* parse(allocator_t* allocator, char* src, size_t src_len) {
+bool parse(
+    allocator_t* allocator, char* src, size_t src_len, ast_item_node** out
+) {
     parser_t parser = make_parser(allocator, make_lexer(src, src_len));
     advance(&parser);
 
@@ -835,5 +842,7 @@ ast_item_node* parse(allocator_t* allocator, char* src, size_t src_len) {
         insert_item(&parser, item(&parser));
     }
 
-    return parser.item_head;
+    *out = parser.item_head;
+
+    return !parser.has_error;
 }

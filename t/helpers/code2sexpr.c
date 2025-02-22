@@ -33,7 +33,12 @@ int main(int argc, char** argv) {
     arena* arena = arena_make(&mmio_alloc, mmio_get_page_size());
     allocator_t allocator = arena_get_alloc(arena);
 
-    ast_item_node* ast = parse(&allocator, argv[1], strlen(argv[1]));
+    ast_item_node* ast;
+
+    if (!parse(&allocator, argv[1], strlen(argv[1]), &ast)) {
+        return 1;
+    }
+
     print_ast(ast);
 
     arena_destroy(arena);

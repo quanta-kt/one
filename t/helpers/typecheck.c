@@ -26,8 +26,9 @@ int main(int argc, char** argv) {
     arena* arena = arena_make(&mmio_alloc, mmio_get_page_size());
     allocator_t allocator = arena_get_alloc(arena);
 
-    ast_item_node* ast = parse(&allocator, code, len);
-    if (typecheck(&allocator, ast)) {
+    ast_item_node* ast;
+
+    if (parse(&allocator, code, len, &ast) && typecheck(&allocator, ast)) {
         ret = 0;
     }
 

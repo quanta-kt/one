@@ -68,7 +68,12 @@ int compile_file(struct compiler_args* args, mmio_mapping* mapping) {
     arena* arena = arena_make(&mmio_alloc, mmio_get_page_size());
     allocator_t allocator = arena_get_alloc(arena);
 
-    ast_item_node* ast = parse(&allocator, (char*) mapping->ptr, mapping->length);
+    ast_item_node* ast;
+
+    if (!parse(&allocator, (char*) mapping->ptr, mapping->length, &ast)) {
+        ret = 1;
+        goto cleanup;
+    }
 
     if (!typecheck(&allocator, ast)) {
         ret = 1;
