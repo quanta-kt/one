@@ -138,7 +138,7 @@ int compile_file(struct compiler_args* args, FILE* file) {
      * We do not want to proceed with compiling if there was an error
      * during parsing or typechecking.
      */
-    if (ret != 0 || !args->typecheck_only) {
+    if (ret == 0 && !args->typecheck_only) {
         fprintf(stderr, "NOT IMPLEMENTED: Code execution is WIP.\n");
         ret = 2;
     }
