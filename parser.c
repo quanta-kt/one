@@ -79,12 +79,22 @@ static void vsyntax_error(
 
     fprintf(
         stderr,
-        "\n    %ld | %.*s%s\n\n",
+        "\n%5ld | %.*s%s\n",
         tok->line,
         line_len,
         line_start,
         *line_end == '\0' ? "(end of file)" : ""
     );
+
+    for (size_t i = 0; i < tok->col + 7; i++) {
+        fputc(' ', stderr);
+    }
+
+    for (size_t i = 0; i < tok->span_size; i++) {
+        fputc('^', stderr);
+    }
+
+    fputc('\n', stderr);
 
     exit(1);
 }
