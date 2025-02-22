@@ -57,7 +57,7 @@ static ast_expr_node* boolean(parser_t* parser);
 static ast_expr_node* lambda(parser_t* parser);
 
 static void vsyntax_error(
-    const char* source, token* tok, char const* fmt, va_list args
+    const char* source, token* tok, bool die, char const* fmt, va_list args
 ) {
     char* line_start = tok->span;
     char* line_end = tok->span;
@@ -99,20 +99,40 @@ static void vsyntax_error(
 
     fputc('\n', stderr);
 
-    exit(1);
+    if (die) {
+        exit(1);
+    }
 }
 
 static void syntax_error_at_current(parser_t* parser, char const* fmt, ...) {
+    parser->has_error = true;
     va_list args;
     va_start(args, fmt);
-    vsyntax_error(parser->lexer.src, &parser->curr, fmt, args);
+    vsyntax_error(parser->lexer.src, &parser->curr, false, fmt, args);
+    va_end(args);
+}
+
+static void syntax_error_at_current_and_die(parser_t* parser, char const* fmt, ...) {
+    parser->has_error = true;
+    va_list args;
+    va_start(args, fmt);
+    vsyntax_error(parser->lexer.src, &parser->curr, true, fmt, args);
     va_end(args);
 }
 
 static void syntax_error_at_previous(parser_t* parser, char const* fmt, ...) {
+    parser->has_error = true;
     va_list args;
     va_start(args, fmt);
-    vsyntax_error(parser->lexer.src, &parser->prev, fmt, args);
+    vsyntax_error(parser->lexer.src, &parser->prev, false, fmt, args);
+    va_end(args);
+}
+
+static void syntax_error_at_previous_and_die(parser_t* parser, char const* fmt, ...) {
+    parser->has_error = true;
+    va_list args;
+    va_start(args, fmt);
+    vsyntax_error(parser->lexer.src, &parser->prev, true, fmt, args);
     va_end(args);
 }
 
@@ -238,9 +258,10 @@ static token expect(parser_t* parser, token_type tt, const char* fmt, ...) {
         token offending =
             parser->curr.type == TOK_EOF ? parser->prev : parser->curr;
 
+        parser->has_error = true;
         va_list args;
         va_start(args, fmt);
-        vsyntax_error(parser->lexer.src, &offending, fmt, args);
+        vsyntax_error(parser->lexer.src, &offending, true, fmt, args);
         va_end(args);
     }
 
@@ -260,7 +281,7 @@ static vec_typename typename_tuple_items(parser_t* parser, bool function) {
     }
 
     if (parser->prev.type != TOK_PAREN_CLOSE) {
-        syntax_error_at_previous(
+        syntax_error_at_previous_and_die(
             parser,
             function ? "EOF while parsing function type params"
                      : "EOF while parsing tuple items"
@@ -330,7 +351,7 @@ static ast_typename* typename(parser_t* parser) {
     } else if (match(parser, TOK_FN)) {
         return function_typename(parser);
     } else {
-        syntax_error_at_current(parser, "expected a type");
+        syntax_error_at_current_and_die(parser, "expected a type");
     }
 }
 
@@ -339,7 +360,7 @@ static ast_item_node* item(parser_t* parser) {
         return function_decl(parser);
     }
 
-    syntax_error_at_current(parser, "expected function declaration");
+    syntax_error_at_current_and_die(parser, "expected function declaration");
 }
 
 static ast_param* params(parser_t* parser) {
@@ -473,7 +494,7 @@ static ast_stmt_node* if_else(parser_t* parser) {
 
     token brace_open = peek(parser);
     if (brace_open.type != TOK_BRACE_OPEN) {
-        syntax_error_at_current(parser, "expected '{' after if");
+        syntax_error_at_current_and_die(parser, "expected '{' after if");
     }
 
     ast_stmt_node* body = block(parser);
@@ -486,7 +507,7 @@ static ast_stmt_node* if_else(parser_t* parser) {
         } else if (peek(parser).type == TOK_BRACE_OPEN) {
             else_body = block(parser);
         } else {
-            syntax_error_at_current(parser, "expected 'if' or '{' after else");
+            syntax_error_at_current_and_die(parser, "expected 'if' or '{' after else");
         }
     }
 
@@ -500,7 +521,7 @@ static ast_stmt_node* while_(parser_t* parser) {
 
     token brace_open = peek(parser);
     if (brace_open.type != TOK_BRACE_OPEN) {
-        syntax_error_at_current(parser, "expected '{' after while");
+        syntax_error_at_current_and_die(parser, "expected '{' after while");
     }
 
     ast_stmt_node* body = block(parser);
@@ -524,7 +545,7 @@ static ast_expr_node* assign(parser_t* parser) {
 
     while (!is_eof(parser) && match(parser, TOK_ASSIGN)) {
         if (left->type != AST_IDEN) {
-            syntax_error_at_current(parser, "can only assign to identifiers");
+            syntax_error_at_current_and_die(parser, "can only assign to identifiers");
         }
 
         ast_expr_node* right = assign(parser);
@@ -711,7 +732,7 @@ static ast_expr_node* primary(parser_t* parser) {
             return lambda(parser);
 
         default:
-            syntax_error_at_current(parser, "expected primary expression");
+            syntax_error_at_current_and_die(parser, "expected primary expression");
     }
 }
 
@@ -788,7 +809,7 @@ static ast_expr_node* str(parser_t* parser) {
             SUBSTITUTE('t', '\t')
 
             default:
-                syntax_error_at_current(parser, "invalid escape sequence");
+                syntax_error_at_current_and_die(parser, "invalid escape sequence");
         }
     }
 
