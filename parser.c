@@ -99,13 +99,6 @@ static void vsyntax_error(
     exit(1);
 }
 
-static void syntax_error(const char* source, token* tok, char const* fmt, ...) {
-    va_list args;
-    va_start(args, fmt);
-    vsyntax_error(source, tok, fmt, args);
-    va_end(args);
-}
-
 static void syntax_error_at_current(parser_t* parser, char const* fmt, ...) {
     va_list args;
     va_start(args, fmt);
