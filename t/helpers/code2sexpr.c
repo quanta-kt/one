@@ -21,7 +21,9 @@ int main(int argc, char** argv) {
 
     allocator_t* allocator = gpa();
 
-    ast_item_node* ast = parse(allocator, argv[1], strlen(argv[1]));
+    ast_item_node* ast;
+
+    parse(allocator, argv[1], strlen(argv[1]), &ast);
     print_ast(ast);
     free_ast(allocator, ast);
 }
