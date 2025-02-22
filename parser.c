@@ -37,7 +37,7 @@ static ast_expr_node* or_op(parser_t* parser);
 static ast_expr_node* and_op(parser_t* parser);
 static ast_expr_node* bitwise_or(parser_t* parser);
 static ast_expr_node* bitwise_xor(parser_t* parser);
-;
+
 static ast_expr_node* bitwise_and(parser_t* parser);
 static ast_expr_node* equality(parser_t* parser);
 static ast_expr_node* comparision(parser_t* parser);
