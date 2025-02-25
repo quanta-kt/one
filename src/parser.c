@@ -56,6 +56,17 @@ static ast_expr_node* str(parser_t* parser);
 static ast_expr_node* boolean(parser_t* parser);
 static ast_expr_node* lambda(parser_t* parser);
 
+/**
+ * Takes a pass at the source code to check if curly braces are balanced.
+ *
+ * \p{lexer} An initalized lexer containing the source code. This wil be
+ *           consumed.
+ *
+ * @returns true if curly braces are balanced, false otherwise.
+ */
+static bool validate_curly_brace_balance(lexer_t lexer);
+
+
 static void vsyntax_error(
     const char* source, token* tok, bool die, char const* fmt, va_list args
 ) {
@@ -133,6 +144,15 @@ static void syntax_error_at_previous_and_die(parser_t* parser, char const* fmt, 
     va_list args;
     va_start(args, fmt);
     vsyntax_error(parser->lexer.src, &parser->prev, true, fmt, args);
+    va_end(args);
+}
+
+static void syntax_error_at_token(
+    char* src, token* token, char const* fmt, ...
+) {
+    va_list args;
+    va_start(args, fmt);
+    vsyntax_error(src, token, false, fmt, args);
     va_end(args);
 }
 
@@ -853,12 +873,90 @@ static ast_expr_node* lambda(parser_t* parser) {
     return make_ast_lambda(parser->allocator, params_list, body, return_type);
 }
 
+static bool validate_curly_brace_balance(lexer_t lexer) {
+    bool ret = true;
+
+    token_result curr;
+
+    allocator_t* allocator = gpa();
+
+    /* A list of '{' tokens we haven't see a closing '}' for. */
+    token* opened = ALLOC_ARRAY(allocator, token, 8);
+    size_t opened_cap = 8;
+    size_t opened_len = 0;
+
+    for (;;) {
+        curr = lex_advance(&lexer);
+
+        if (!curr.ok) {
+            continue;
+        }
+
+        if (curr.t.type == TOK_EOF) {
+            break;
+        }
+
+        if (curr.t.type == TOK_BRACE_OPEN) {
+            if (opened_cap < opened_len + 1) {
+                size_t new_cap = opened_cap * 2;
+                opened = RESIZE_ARRAY(allocator, opened, token, opened_cap, new_cap);
+
+                opened_cap = new_cap;
+            }
+
+            opened[opened_len++] = curr.t;
+        } else if (curr.t.type == TOK_BRACE_CLOSE) {
+            if (opened_len > 0) {
+                opened_len--;
+                continue;
+            }
+
+            /* This '}' is a stray. Report it. */
+            syntax_error_at_token(
+                lexer.src,
+                &curr.t,
+                "unexpected closing delimiter '}'"
+            );
+
+            ret = false;
+        }
+    }
+
+    if (opened_len > 0) {
+        ret = false;
+
+        for (size_t i = 0; i < opened_len; i++) {
+            syntax_error_at_token(
+                lexer.src,
+                &opened[i],
+                "unclosed delimiter '{'"
+            );
+        }
+    }
+
+    FREE_ARRAY(allocator, opened, token, opened_cap);
+    return ret;
+}
+
 bool parse(
     allocator_t* allocator, char* src, size_t src_len, ast_item_node** out
 ) {
     parser_t parser = make_parser(allocator, make_lexer(src, src_len));
     advance(&parser);
 
+    /* Pass 1: Check if the braces are balanced. */
+
+    if (!validate_curly_brace_balance(make_lexer(src, src_len))) {
+        /*
+         * Regardless of success status, we must write the parsed AST to
+         * \p{out}, which is empty in this case.
+         */
+        *out = NULL;
+
+        return false;
+    }
+
+    /* Pass 2: Parse into AST */
     while (!is_eof(&parser)) {
         insert_item(&parser, item(&parser));
     }
