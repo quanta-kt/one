@@ -466,7 +466,16 @@ static ast_stmt_node* var_decl(parser_t* parser) {
 
     ast_expr_node* value = match(parser, TOK_ASSIGN) ? expr(parser) : NULL;
 
-    expect(parser, TOK_SEMI, "expected ';' after variable declaration");
+    /*
+     * We whine about the missing semi-colon but do not give up on further
+     * parsing because of it.
+     */
+    if (!match(parser, TOK_SEMI)) {
+        syntax_error_at_previous(
+            parser,
+            "expected ';' after variable declaration"
+        );
+    }
 
     return make_ast_var_decl(parser->allocator, name, type, value, mut);
 }
@@ -533,7 +542,16 @@ static ast_stmt_node* expr_stmt(parser_t* parser) {
     ast_expr_node* expr_node = expr(parser);
     ast_stmt_node* node = make_ast_expr_stmt(parser->allocator, expr_node);
 
-    expect(parser, TOK_SEMI, "expected ';' after statement");
+    /*
+     * We whine about the missing semi-colon but do not give up on further
+     * parsing because of it.
+     */
+    if (!match(parser, TOK_SEMI)) {
+        syntax_error_at_previous(
+            parser,
+            "expected ';' after statement"
+        );
+    }
 
     return node;
 }
