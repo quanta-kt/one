@@ -380,7 +380,13 @@ static ast_item_node* item(parser_t* parser) {
         return function_decl(parser);
     }
 
-    syntax_error_at_current_and_die(parser, "expected function declaration");
+    syntax_error_at_current(parser, "expected function declaration");
+
+    while (!is_eof(parser) && parser->curr.type != TOK_FN) {
+        advance(parser);
+    }
+
+    return NULL;
 }
 
 static ast_param* params(parser_t* parser) {
@@ -958,7 +964,15 @@ bool parse(
 
     /* Pass 2: Parse into AST */
     while (!is_eof(&parser)) {
-        insert_item(&parser, item(&parser));
+        ast_item_node* curr = item(&parser);
+
+        /*
+         * item() may return NULL if there was an error while parsing
+         * the item.
+         */
+        if (curr != NULL) {
+            insert_item(&parser, curr);
+        }
     }
 
     *out = parser.item_head;
