@@ -288,7 +288,7 @@ static ast_typename* function_typename(parser_t* parser) {
 }
 
 static ast_typename* typename_tuple(parser_t* parser) {
-    vec_typename items = typename_tuple_items(parser, true);
+    vec_typename items = typename_tuple_items(parser, false);
     return make_ast_typename_tuple(parser->allocator, items);
 }
 
