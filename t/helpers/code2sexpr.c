@@ -14,6 +14,8 @@
 #include "parser.h"
 
 int main(int argc, char** argv) {
+    int ret = 0;
+
     if (argc != 2) {
         fprintf(stderr, "usage: %s <code>\n", argv[0]);
         return 1;
@@ -23,7 +25,13 @@ int main(int argc, char** argv) {
 
     ast_item_node* ast;
 
-    parse(allocator, argv[1], strlen(argv[1]), &ast);
-    print_ast(ast);
+    if (parse(allocator, argv[1], strlen(argv[1]), &ast)) {
+        print_ast(ast);
+    } else {
+        ret = 1;
+    }
+
     free_ast(allocator, ast);
+
+    return ret;
 }
