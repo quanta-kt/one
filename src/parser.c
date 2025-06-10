@@ -73,6 +73,7 @@ static void vsyntax_error(
     char* line_start = tok->span;
     char* line_end = tok->span;
     int line_len;
+    size_t tabs_count = 0;
 
     /**
      * Determine the start and the end of the line where token is present.
@@ -80,8 +81,13 @@ static void vsyntax_error(
      * program, i.e. the 'src' paramater.
      */
     while (line_start != source && *(line_start - 1) != '\n') {
+        if (*line_start == '\t') {
+            tabs_count++;
+        }
+
         line_start--;
     }
+
     while (*line_end != '\0' && *line_end != '\n') {
         line_end++;
     }
@@ -100,7 +106,15 @@ static void vsyntax_error(
         *line_end == '\0' ? "(end of file)" : ""
     );
 
-    for (size_t i = 0; i < tok->col + 7; i++) {
+    /*
+     * When dealing with tabs, we must pad with tabs instead of spaces
+     * to ensure correct alignment of '^' with the token it is pointing at.
+     */
+    for (size_t i = 0; i < tabs_count; i++) {
+        fputc('\t', stderr);
+    }
+
+    for (size_t i = tabs_count; i < tok->col + 7; i++) {
         fputc(' ', stderr);
     }
 
