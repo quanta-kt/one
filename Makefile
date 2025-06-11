@@ -1,8 +1,9 @@
 all::
 
 CC = gcc
-CFLAGS = -g -Wextra -Werror
+CFLAGS = -g -Wextra -Werror -Isrc/
 
+SRC_DIR = src
 BUILD_DIR = build
 TEST_DIRECTORY = t
 TEST_HELPER_BIN = $(BUILD_DIR)/test-helpers
@@ -26,6 +27,7 @@ LIB_HEADERS += lex.h
 LIB_HEADERS += parser.h
 LIB_HEADERS += typecheck.h
 LIB_HEADERS += vec.h
+LIB_HEADERS := $(addprefix $(SRC_DIR)/,$(LIB_HEADERS))
 
 ONEC_OBJ += $(BUILD_DIR)/main.o
 ONEC_OBJ += $(LIB_OBJ)
@@ -37,7 +39,7 @@ $(OUTPUT): $(ONEC_OBJ)
 	@mkdir -p build
 	$(CC) $(CFLAGS) $(ONEC_OBJ) -o $(OUTPUT)
 
-$(ONEC_OBJ): build/%.o: %.c $(LIB_HEADERS)
+$(ONEC_OBJ): build/%.o: $(SRC_DIR)/%.c $(LIB_HEADERS)
 	@mkdir -p build
 	$(CC) $(CFLAGS) -c $< -o $@
 
@@ -56,7 +58,7 @@ $(TEST_HELPER_OBJS): $(TEST_HELPER_BIN)/%.o: \
 	$(LIB_OBJ) $(LIB_HEADER)
 
 	@mkdir -p $(TEST_HELPER_BIN)
-	$(CC) $(CFLAGS) -I. -c $< -o $@
+	$(CC) $(CFLAGS) -c $< -o $@
 all:: $(TEST_HELPER_OBJS)
 test-helpers: $(TEST_HELPER_OBJS)
 
