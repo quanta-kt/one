@@ -1,4 +1,4 @@
-all::
+first::
 
 CC = gcc
 CFLAGS = -g -Wextra -Werror -Isrc/
@@ -32,8 +32,8 @@ LIB_HEADERS := $(addprefix $(SRC_DIR)/,$(LIB_HEADERS))
 ONEC_OBJ += $(BUILD_DIR)/main.o
 ONEC_OBJ += $(LIB_OBJ)
 
-all:: $(OUTPUT)
-.PHONY: all
+first:: $(OUTPUT)
+.PHONY: first
 
 $(OUTPUT): $(ONEC_OBJ)
 	@mkdir -p build
@@ -59,16 +59,13 @@ $(TEST_HELPER_OBJS): $(TEST_HELPER_BIN)/%.o: \
 
 	@mkdir -p $(TEST_HELPER_BIN)
 	$(CC) $(CFLAGS) -c $< -o $@
-all:: $(TEST_HELPER_OBJS)
-test-helpers: $(TEST_HELPER_OBJS)
 
 TEST_HELPER_PROGRAMS = $(TEST_HELPER_OBJS:.o=)
 
 $(TEST_HELPER_PROGRAMS): %: %.o
 	$(CC) $(CFLAGS) $< $(LIB_OBJ) -o $@
-all:: $(TEST_HELPER_PROGRAMS)
 
-test:
+test: $(OUTPUT) $(TEST_HELPER_PROGRAMS)
 	make -C $(TEST_DIRECTORY)
 .PHONY: test
 
