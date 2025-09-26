@@ -68,52 +68,51 @@ static ast_expr_node* lambda(parser_t* parser);
  */
 static bool validate_curly_brace_balance(error_printer_t error_printer, lexer_t lexer);
 
-static void syntax_error_at_current(parser_t* parser, char const* fmt, ...) {
+static void syntax_error_at_current(parser_t* parser, const error_desc_t error, ...) {
     parser->has_error = true;
     va_list args;
-    va_start(args, fmt);
-    parser->error_printer.error(parser->lexer.src, &parser->curr.span, ERROR_KIND_SYNTAX,
-                                 fmt, args);
+    va_start(args, error);
+    parser->error_printer.error(parser->lexer.src, &parser->curr.span, error,
+                                args);
     va_end(args);
 }
 
-static void syntax_error_at_current_and_die(parser_t* parser, char const* fmt, ...) {
+static void syntax_error_at_current_and_die(parser_t* parser, const error_desc_t error, ...) {
     parser->has_error = true;
     va_list args;
-    va_start(args, fmt);
-    parser->error_printer.error(parser->lexer.src, &parser->curr.span, ERROR_KIND_SYNTAX,
-                                 fmt, args);
+    va_start(args, error);
+    parser->error_printer.error(parser->lexer.src, &parser->curr.span, error,
+                                args);
     va_end(args);
     exit(1);
 }
 
-static void syntax_error_at_previous(parser_t* parser, char const* fmt, ...) {
+static void syntax_error_at_previous(parser_t* parser, const error_desc_t error, ...) {
     parser->has_error = true;
     va_list args;
-    va_start(args, fmt);
-    parser->error_printer.error(parser->lexer.src, &parser->prev.span, ERROR_KIND_SYNTAX,
-                                 fmt, args);
+    va_start(args, error);
+    parser->error_printer.error(parser->lexer.src, &parser->prev.span, error,
+                                args);
     va_end(args);
 }
 
-static void syntax_error_at_previous_and_die(parser_t* parser, char const* fmt, ...) {
+static void syntax_error_at_previous_and_die(parser_t* parser, const error_desc_t error, ...) {
     parser->has_error = true;
     va_list args;
-    va_start(args, fmt);
-    parser->error_printer.error(parser->lexer.src, &parser->prev.span, ERROR_KIND_SYNTAX,
-                                 fmt, args);
+    va_start(args, error);
+    parser->error_printer.error(parser->lexer.src, &parser->prev.span, error,
+                                args);
     va_end(args);
     exit(1);
 }
 
 static void syntax_error_at_span(
     error_printer_t error_printer, char* src, span_info* span,
-    char const* fmt, ...
+    const error_desc_t error, ...
 ) {
     va_list args;
-    va_start(args, fmt);
-    error_printer.error(src, span, ERROR_KIND_SYNTAX,
-                        fmt, args);
+    va_start(args, error);
+    error_printer.error(src, span, error, args);
     va_end(args);
 }
 
@@ -124,7 +123,7 @@ static void lex_e_print(lexer_t* lex, lex_error e, error_printer_t error_printer
                     error_printer,
                     lex->src,
                     &e.span,
-                    "Unexpected character: '%c'",
+                    E0002,
                     *e.span.span
             );
             break;
@@ -135,7 +134,7 @@ static void lex_e_print(lexer_t* lex, lex_error e, error_printer_t error_printer
                     error_printer,
                     lex->src,
                     &e.span,
-                    "Unterminated string: %.*s",
+                    E0003,
                     (int)e.span.span_size,
                     e.span.span
             );
@@ -244,16 +243,16 @@ static bool match(parser_t* parser, token_type tt) {
  * Like match, but die if the token is not of the expected type.
  * Unlike match, this returns the token that was consumed.
  */
-static token expect(parser_t* parser, token_type tt, const char* fmt, ...) {
+static token expect(parser_t* parser, token_type tt, const error_desc_t error, ...) {
     if (!match(parser, tt)) {
         token offending =
             parser->curr.type == TOK_EOF ? parser->prev : parser->curr;
 
         parser->has_error = true;
         va_list args;
-        va_start(args, fmt);
+        va_start(args, error);
         parser->error_printer.error(parser->lexer.src, &offending.span,
-                                    ERROR_KIND_SYNTAX, fmt, args);
+                                    error, args);
         va_end(args);
         exit(1);
     }
@@ -276,8 +275,7 @@ static vec_typename typename_tuple_items(parser_t* parser, bool function) {
     if (parser->prev.type != TOK_PAREN_CLOSE) {
         syntax_error_at_previous_and_die(
             parser,
-            function ? "EOF while parsing function type params"
-                     : "EOF while parsing tuple items"
+            function ? E0503 : E0504
         );
     }
 
@@ -285,7 +283,7 @@ static vec_typename typename_tuple_items(parser_t* parser, bool function) {
 }
 
 static ast_typename* function_typename(parser_t* parser) {
-    expect(parser, TOK_PAREN_OPEN, "expected '(' after 'fn'");
+    expect(parser, TOK_PAREN_OPEN, E0505);
 
     vec_typename params = typename_tuple_items(parser, true);
 
@@ -344,7 +342,7 @@ static ast_typename* typename(parser_t* parser) {
     } else if (match(parser, TOK_FN)) {
         return function_typename(parser);
     } else {
-        syntax_error_at_current_and_die(parser, "expected a type");
+        syntax_error_at_current_and_die(parser, E0502);
     }
 }
 
@@ -353,7 +351,7 @@ static ast_item_node* item(parser_t* parser) {
         return function_decl(parser);
     }
 
-    syntax_error_at_current(parser, "expected function declaration");
+    syntax_error_at_current(parser, E0506);
 
     while (!is_eof(parser) && parser->curr.type != TOK_FN) {
         advance(parser);
@@ -368,9 +366,9 @@ static ast_param* params(parser_t* parser) {
 
     while (!is_eof(parser) && peek(parser).type != TOK_PAREN_CLOSE) {
         token param_name =
-            expect(parser, TOK_IDEN, "expected a parameter name");
+            expect(parser, TOK_IDEN, E0507);
 
-        expect(parser, TOK_COLON, "expected ':' after parameter name");
+        expect(parser, TOK_COLON, E0508);
         ast_typename* type = typename(parser);
 
         ast_param* item = make_ast_param(parser->allocator, param_name, type);
@@ -387,11 +385,11 @@ static ast_param* params(parser_t* parser) {
 static ast_item_node* function_decl(parser_t* parser) {
     // 'fn' token is consumed before calling function_decl
 
-    token name = expect(parser, TOK_IDEN, "expected an identifier after 'fn'");
+    token name = expect(parser, TOK_IDEN, E0509);
 
-    expect(parser, TOK_PAREN_OPEN, "expected a '(' after function name");
+    expect(parser, TOK_PAREN_OPEN, E0510);
     ast_param* params_list = params(parser);
-    expect(parser, TOK_PAREN_CLOSE, "expected a ')' after function params");
+    expect(parser, TOK_PAREN_CLOSE, E0511);
 
     ast_typename* return_type;
     if (match(parser, TOK_ARROW_RIGHT)) {
@@ -400,7 +398,7 @@ static ast_item_node* function_decl(parser_t* parser) {
         return_type = make_ast_typename_unit(parser->allocator);
     }
 
-    expect(parser, TOK_BRACE_OPEN, "expected function body");
+    expect(parser, TOK_BRACE_OPEN, E0512);
 
     ast_stmt_node* body = NULL;
     ast_stmt_node* body_tail = NULL;
@@ -454,8 +452,7 @@ static ast_stmt_node* var_decl(parser_t* parser) {
     token name = name = expect(
         parser,
         TOK_IDEN,
-        mut ? "expected identifier after 'let mut'"
-            : "expected identifier after 'let'"
+        mut ? E0513 : E0514
     );
 
     ast_typename* type = NULL;
@@ -465,7 +462,7 @@ static ast_stmt_node* var_decl(parser_t* parser) {
 
     ast_expr_node* value = match(parser, TOK_ASSIGN) ? expr(parser) : NULL;
 
-    expect(parser, TOK_SEMI, "expected ';' after variable declaration");
+    expect(parser, TOK_SEMI, E0515);
 
     return make_ast_var_decl(parser->allocator, name, type, value, mut);
 }
@@ -482,7 +479,7 @@ static ast_stmt_node* block(parser_t* parser) {
         stmt_list_append(&body, &tail, next);
     }
 
-    expect(parser, TOK_BRACE_CLOSE, "unclosed block");
+    expect(parser, TOK_BRACE_CLOSE, E0516);
 
     return make_ast_block(parser->allocator, body);
 }
@@ -493,7 +490,7 @@ static ast_stmt_node* if_else(parser_t* parser) {
 
     token brace_open = peek(parser);
     if (brace_open.type != TOK_BRACE_OPEN) {
-        syntax_error_at_current_and_die(parser, "expected '{' after if");
+        syntax_error_at_current_and_die(parser, E0517);
     }
 
     ast_stmt_node* body = block(parser);
@@ -506,7 +503,7 @@ static ast_stmt_node* if_else(parser_t* parser) {
         } else if (peek(parser).type == TOK_BRACE_OPEN) {
             else_body = block(parser);
         } else {
-            syntax_error_at_current_and_die(parser, "expected 'if' or '{' after else");
+            syntax_error_at_current_and_die(parser, E0518);
         }
     }
 
@@ -520,7 +517,7 @@ static ast_stmt_node* while_(parser_t* parser) {
 
     token brace_open = peek(parser);
     if (brace_open.type != TOK_BRACE_OPEN) {
-        syntax_error_at_current_and_die(parser, "expected '{' after while");
+        syntax_error_at_current_and_die(parser, E0519);
     }
 
     ast_stmt_node* body = block(parser);
@@ -532,7 +529,7 @@ static ast_stmt_node* expr_stmt(parser_t* parser) {
     ast_expr_node* expr_node = expr(parser);
     ast_stmt_node* node = make_ast_expr_stmt(parser->allocator, expr_node);
 
-    expect(parser, TOK_SEMI, "expected ';' after statement");
+    expect(parser, TOK_SEMI, E0520);
 
     return node;
 }
@@ -544,7 +541,7 @@ static ast_expr_node* assign(parser_t* parser) {
 
     while (!is_eof(parser) && match(parser, TOK_ASSIGN)) {
         if (left->type != AST_IDEN) {
-            syntax_error_at_current_and_die(parser, "can only assign to identifiers");
+            syntax_error_at_current_and_die(parser, E0521);
         }
 
         ast_expr_node* right = assign(parser);
@@ -691,7 +688,7 @@ static vec_expr arguments(parser_t* parser) {
         }
     }
 
-    expect(parser, TOK_PAREN_CLOSE, "expected a ')' after function arguments");
+    expect(parser, TOK_PAREN_CLOSE, E0522);
 
     return args;
 }
@@ -731,7 +728,7 @@ static ast_expr_node* primary(parser_t* parser) {
             return lambda(parser);
 
         default:
-            syntax_error_at_current_and_die(parser, "expected primary expression");
+            syntax_error_at_current_and_die(parser, E0523);
     }
 }
 
@@ -752,7 +749,7 @@ static ast_expr_node* group(parser_t* parser) {
 
     ast_expr_node* result = expr(parser);
 
-    expect(parser, TOK_PAREN_CLOSE, "expected ')'");
+    expect(parser, TOK_PAREN_CLOSE, E0524);
 
     return result;
 }
@@ -808,7 +805,7 @@ static ast_expr_node* str(parser_t* parser) {
             SUBSTITUTE('t', '\t')
 
             default:
-                syntax_error_at_current_and_die(parser, "invalid escape sequence");
+                syntax_error_at_current_and_die(parser, E0525);
         }
     }
 
@@ -828,9 +825,9 @@ static ast_expr_node* boolean(parser_t* parser) {
 static ast_expr_node* lambda(parser_t* parser) {
     advance(parser);  // fn
 
-    expect(parser, TOK_PAREN_OPEN, "expected a '(' after function name");
+    expect(parser, TOK_PAREN_OPEN, E0510);
     ast_param* params_list = params(parser);
-    expect(parser, TOK_PAREN_CLOSE, "expected a ')' after function params");
+    expect(parser, TOK_PAREN_CLOSE, E0511);
 
     ast_typename* return_type;
     if (match(parser, TOK_ARROW_RIGHT)) {
@@ -839,7 +836,7 @@ static ast_expr_node* lambda(parser_t* parser) {
         return_type = make_ast_typename_unit(parser->allocator);
     }
 
-    expect(parser, TOK_BRACE_OPEN, "expected function body");
+    expect(parser, TOK_BRACE_OPEN, E0512);
 
     ast_stmt_node* body = NULL;
     ast_stmt_node* body_tail = NULL;
@@ -895,7 +892,7 @@ static bool validate_curly_brace_balance(error_printer_t error_printer, lexer_t 
                 error_printer,
                 lexer.src,
                 &curr.t.span,
-                "unexpected closing delimiter '}'"
+                E0526
             );
 
             ret = false;
@@ -910,7 +907,7 @@ static bool validate_curly_brace_balance(error_printer_t error_printer, lexer_t 
                 error_printer,
                 lexer.src,
                 &opened[i].span,
-                "unclosed delimiter '{'"
+                E0527
             );
         }
     }

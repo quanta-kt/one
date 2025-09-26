@@ -17,15 +17,50 @@
 #include <stdarg.h>
 #include <stdio.h>
 
-typedef enum {
-    ERROR_KIND_SYNTAX,
-} error_kind;
+typedef struct {
+    unsigned int code;
+    char* message_fmt;
+} error_desc_t;
+
+// Lex errors
+extern const error_desc_t E0001;
+extern const error_desc_t E0002;
+extern const error_desc_t E0003;
+
+// Parse errors
+extern const error_desc_t E0501;
+extern const error_desc_t E0502;
+extern const error_desc_t E0503;
+extern const error_desc_t E0504;
+extern const error_desc_t E0505;
+extern const error_desc_t E0506;
+extern const error_desc_t E0507;
+extern const error_desc_t E0508;
+extern const error_desc_t E0509;
+extern const error_desc_t E0510;
+extern const error_desc_t E0511;
+extern const error_desc_t E0512;
+extern const error_desc_t E0513;
+extern const error_desc_t E0514;
+extern const error_desc_t E0515;
+extern const error_desc_t E0516;
+extern const error_desc_t E0517;
+extern const error_desc_t E0518;
+extern const error_desc_t E0519;
+extern const error_desc_t E0520;
+extern const error_desc_t E0521;
+extern const error_desc_t E0522;
+extern const error_desc_t E0523;
+extern const error_desc_t E0524;
+extern const error_desc_t E0525;
+extern const error_desc_t E0526;
+extern const error_desc_t E0527;
+
 
 typedef void (*fn_error)(
     const char* source,
     span_info* span,
-    const error_kind kind,
-    char const* fmt,
+    const error_desc_t error,
     va_list args
 );
 
