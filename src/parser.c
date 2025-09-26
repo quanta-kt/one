@@ -72,7 +72,7 @@ static void syntax_error_at_current(parser_t* parser, char const* fmt, ...) {
     parser->has_error = true;
     va_list args;
     va_start(args, fmt);
-    parser->error_printer.error(parser->lexer.src, &parser->curr, ERROR_KIND_SYNTAX,
+    parser->error_printer.error(parser->lexer.src, &parser->curr.span, ERROR_KIND_SYNTAX,
                                  fmt, args);
     va_end(args);
 }
@@ -81,7 +81,7 @@ static void syntax_error_at_current_and_die(parser_t* parser, char const* fmt, .
     parser->has_error = true;
     va_list args;
     va_start(args, fmt);
-    parser->error_printer.error(parser->lexer.src, &parser->curr, ERROR_KIND_SYNTAX,
+    parser->error_printer.error(parser->lexer.src, &parser->curr.span, ERROR_KIND_SYNTAX,
                                  fmt, args);
     va_end(args);
     exit(1);
@@ -91,7 +91,7 @@ static void syntax_error_at_previous(parser_t* parser, char const* fmt, ...) {
     parser->has_error = true;
     va_list args;
     va_start(args, fmt);
-    parser->error_printer.error(parser->lexer.src, &parser->prev, ERROR_KIND_SYNTAX,
+    parser->error_printer.error(parser->lexer.src, &parser->prev.span, ERROR_KIND_SYNTAX,
                                  fmt, args);
     va_end(args);
 }
@@ -100,36 +100,44 @@ static void syntax_error_at_previous_and_die(parser_t* parser, char const* fmt, 
     parser->has_error = true;
     va_list args;
     va_start(args, fmt);
-    parser->error_printer.error(parser->lexer.src, &parser->prev, ERROR_KIND_SYNTAX,
+    parser->error_printer.error(parser->lexer.src, &parser->prev.span, ERROR_KIND_SYNTAX,
                                  fmt, args);
     va_end(args);
     exit(1);
 }
 
-static void syntax_error_at_token(
-    error_printer_t error_printer, char* src, token* token,
+static void syntax_error_at_span(
+    error_printer_t error_printer, char* src, span_info* span,
     char const* fmt, ...
 ) {
     va_list args;
     va_start(args, fmt);
-    error_printer.error(src, token, ERROR_KIND_SYNTAX,
-                                 fmt, args);
+    error_printer.error(src, span, ERROR_KIND_SYNTAX,
+                        fmt, args);
     va_end(args);
 }
 
-static void lex_e_print(lex_error e) {
+static void lex_e_print(lexer_t* lex, lex_error e, error_printer_t error_printer) {
     switch (e.type) {
         case LEX_ERR_UNEXPECTED_CHAR: {
-            fprintf(stderr, "Unexpected character: '%c'", *e.span);
+            syntax_error_at_span(
+                    error_printer,
+                    lex->src,
+                    &e.span,
+                    "Unexpected character: '%c'",
+                    *e.span.span
+            );
             break;
         }
 
         case LEX_ERR_UNTERMINATED_STRING: {
-            fprintf(
-                stderr,
-                "Unterminated string: %.*s",
-                (int)e.span_size,
-                e.span
+            syntax_error_at_span(
+                    error_printer,
+                    lex->src,
+                    &e.span,
+                    "Unterminated string: %.*s",
+                    (int)e.span.span_size,
+                    e.span.span
             );
             break;
         }
@@ -201,7 +209,7 @@ static token advance(parser_t* parser) {
 
     token_result res;
     while (!(res = lex_advance(&parser->lexer)).ok) {
-        lex_e_print(res.e);
+        lex_e_print(&parser->lexer, res.e, parser->error_printer);
     }
 
     parser->curr = res.t;
@@ -244,7 +252,7 @@ static token expect(parser_t* parser, token_type tt, const char* fmt, ...) {
         parser->has_error = true;
         va_list args;
         va_start(args, fmt);
-        parser->error_printer.error(parser->lexer.src, &offending,
+        parser->error_printer.error(parser->lexer.src, &offending.span,
                                     ERROR_KIND_SYNTAX, fmt, args);
         va_end(args);
         exit(1);
@@ -730,13 +738,13 @@ static ast_expr_node* primary(parser_t* parser) {
 static ast_expr_node* number(parser_t* parser) {
     token tok = peek(parser);
     advance(parser);
-    return make_ast_num(parser->allocator, strtold(tok.span, NULL));
+    return make_ast_num(parser->allocator, strtold(tok.span.span, NULL));
 }
 
 static ast_expr_node* iden(parser_t* parser) {
     token tok = peek(parser);
     advance(parser);
-    return make_ast_identifier(parser->allocator, tok.span, tok.span_size);
+    return make_ast_identifier(parser->allocator, tok.span.span, tok.span.span_size);
 }
 
 static ast_expr_node* group(parser_t* parser) {
@@ -756,41 +764,41 @@ static ast_expr_node* str(parser_t* parser) {
         break;
 
     token tok = peek(parser);
-    size_t size = tok.span_size - 1;
+    size_t size = tok.span.span_size - 1;
 
     char* str = ALLOC_ARRAY(parser->allocator, char, size);
     size_t len = 0;
     size_t i = 1;
 
-    while (i < tok.span_size - 1) {
-        if (tok.span[i] != '\\') {
-            str[len++] = tok.span[i++];
+    while (i < tok.span.span_size - 1) {
+        if (tok.span.span[i] != '\\') {
+            str[len++] = tok.span.span[i++];
             continue;
         }
 
         i++;
 
-        if (isdigit(tok.span[i])) {
+        if (isdigit(tok.span.span[i])) {
             char* end;
-            char c = (char)strtol(tok.span + i, &end, 10);
-            i = end - tok.span;
+            char c = (char)strtol(tok.span.span + i, &end, 10);
+            i = end - tok.span.span;
 
             str[len++] = c;
             continue;
         }
 
-        if (tok.span[i] == 'x') {
+        if (tok.span.span[i] == 'x') {
             i++;  // x
 
             char* end;
-            char c = (char)strtol(tok.span + i, &end, 16);
-            i = end - tok.span;
+            char c = (char)strtol(tok.span.span + i, &end, 16);
+            i = end - tok.span.span;
 
             str[len++] = c;
             continue;
         }
 
-        switch (tok.span[i++]) {
+        switch (tok.span.span[i++]) {
             SUBSTITUTE('\\', '\\')
             SUBSTITUTE('"', '"')
             SUBSTITUTE('a', '\a')
@@ -883,10 +891,10 @@ static bool validate_curly_brace_balance(error_printer_t error_printer, lexer_t 
             }
 
             /* This '}' is a stray. Report it. */
-            syntax_error_at_token(
+            syntax_error_at_span(
                 error_printer,
                 lexer.src,
-                &curr.t,
+                &curr.t.span,
                 "unexpected closing delimiter '}'"
             );
 
@@ -898,10 +906,10 @@ static bool validate_curly_brace_balance(error_printer_t error_printer, lexer_t 
         ret = false;
 
         for (size_t i = 0; i < opened_len; i++) {
-            syntax_error_at_token(
+            syntax_error_at_span(
                 error_printer,
                 lexer.src,
-                &opened[i],
+                &opened[i].span,
                 "unclosed delimiter '{'"
             );
         }

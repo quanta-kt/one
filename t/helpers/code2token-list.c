@@ -27,10 +27,10 @@ int main(int argc, char** argv) {
     while ((tok = lex_advance(&lex)).ok && tok.t.type != TOK_EOF) {
         printf(
             "%ld:%ld %.*s\n",
-            tok.t.line,
-            tok.t.col,
-            (int)tok.t.span_size,
-            tok.t.span
+            tok.t.span.line,
+            tok.t.span.col,
+            (int)tok.t.span.span_size,
+            tok.t.span.span
         );
     }
 

@@ -23,7 +23,7 @@ typedef enum {
 
 typedef void (*fn_error)(
     const char* source,
-    token* tok,
+    span_info* span,
     const error_kind kind,
     char const* fmt,
     va_list args

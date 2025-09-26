@@ -6,11 +6,11 @@
  * outputs them to stderr.
  */
 static void default_error_printer_fn(
-    const char* source, token* tok, const error_kind kind,
+    const char* source, span_info* span, const error_kind kind,
     char const* fmt, va_list args
 ) {
-    char* line_start = tok->span;
-    char* line_end = tok->span;
+    char* line_start = span->span;
+    char* line_end = span->span;
     int line_len;
     size_t tabs_count = 0;
 
@@ -33,13 +33,13 @@ static void default_error_printer_fn(
 
     line_len = (int)(line_end - line_start);
 
-    fprintf(stderr, "Syntax error at %ld:%ld:\n", tok->line, tok->col);
+    fprintf(stderr, "Syntax error at %ld:%ld:\n", span->line, span->col);
     vfprintf(stderr, fmt, args);
 
     fprintf(
         stderr,
         "\n%5ld | %.*s%s\n",
-        tok->line,
+        span->line,
         line_len,
         line_start,
         *line_end == '\0' ? "(end of file)" : ""
@@ -53,11 +53,11 @@ static void default_error_printer_fn(
         fputc('\t', stderr);
     }
 
-    for (size_t i = tabs_count; i < tok->col + 7; i++) {
+    for (size_t i = tabs_count; i < span->col + 7; i++) {
         fputc(' ', stderr);
     }
 
-    for (size_t i = 0; i < tok->span_size; i++) {
+    for (size_t i = 0; i < span->span_size; i++) {
         fputc('^', stderr);
     }
 

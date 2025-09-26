@@ -46,10 +46,12 @@ const size_t keyword_table_len =
 static token make_token(token_type tt, lexer_t* lex) {
     token tok = (token){
         .type = tt,
-        .span = lex->start,
-        .span_size = lex->curr - lex->start,
-        .line = lex->start_line,
-        .col = lex->start_col,
+        .span = (span_info){
+            .span = lex->start,
+            .span_size = lex->curr - lex->start,
+            .line = lex->start_line,
+            .col = lex->start_col,
+        }
     };
 
     lex->start = lex->curr;
@@ -58,8 +60,21 @@ static token make_token(token_type tt, lexer_t* lex) {
     return tok;
 }
 
-static lex_error make_lex_error(lex_error_type type, char* span, size_t size) {
-    return (lex_error){.type = type, .span = span, .span_size = size};
+static lex_error make_lex_error(lexer_t* lex, lex_error_type type) {
+    lex_error err = (lex_error){
+        .type = type,
+        .span = (span_info){
+            .span = lex->start,
+            .span_size = lex->curr - lex->start,
+            .line = lex->start_line,
+            .col = lex->start_col,
+        }
+    };
+
+    lex->start = lex->curr;
+    lex->start_col = lex->col;
+    lex->start_line = lex->line;
+    return err;
 }
 
 static token_result token_ok(token t) {
@@ -171,11 +186,7 @@ static token_result token_str(lexer_t* lex) {
     }
 
     if (!terminated) {
-        return token_err(make_lex_error(
-            LEX_ERR_UNTERMINATED_STRING,
-            lex->start,
-            lex->curr - lex->start
-        ));
+        return token_err(make_lex_error(lex, LEX_ERR_UNTERMINATED_STRING));
     }
 
     return token_ok(make_token(TOK_STR, lex));
@@ -308,7 +319,7 @@ token_result lex_advance(lexer_t* lex) {
     }
 
     token_result ret =
-        token_err(make_lex_error(LEX_ERR_UNEXPECTED_CHAR, lex->curr, 1));
+        token_err(make_lex_error(lex, LEX_ERR_UNEXPECTED_CHAR));
 
     advance(lex);
 

@@ -481,11 +481,11 @@ static typeres* environment_lookup_symbol(environment* env, token name) {
         symbol* sym;
         sym = (&curr->symbols)->items;
         for (size_t i = 0; i < (&curr->symbols)->len; i++, (sym)++) {
-            if (name.span_size != sym->name.span_size) {
+            if (name.span.span_size != sym->name.span.span_size) {
                 continue;
             }
 
-            if (memcmp(sym->name.span, name.span, name.span_size) == 0) {
+            if (memcmp(sym->name.span.span, name.span.span, name.span.span_size) == 0) {
                 return sym->type;
             }
         }
@@ -880,8 +880,10 @@ cleanup:
 typeres* walk_iden(ast_expr_tc_t* self, ast_node_identifier* expr) {
     token name = (token){
         .type = TOK_IDEN,
-        .span = expr->start,
-        .span_size = expr->len,
+        .span = {
+            .span = expr->start,
+            .span_size = expr->len,
+        }
     };
 
     typeres* type = environment_lookup_symbol(self->ctx->env, name);

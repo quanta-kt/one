@@ -76,12 +76,16 @@ typedef enum {
 } token_type;
 
 typedef struct {
-    token_type type;
     char* span;
     size_t span_size;
 
     size_t line;
     size_t col;
+} span_info;
+
+typedef struct {
+    token_type type;
+    span_info span;
 } token;
 
 typedef enum {
@@ -91,8 +95,7 @@ typedef enum {
 
 typedef struct {
     lex_error_type type;
-    char* span;
-    size_t span_size;
+    span_info span;
 } lex_error;
 
 typedef struct {

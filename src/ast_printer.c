@@ -217,7 +217,7 @@ static void walk_lambda(ast_expr_printer_t* _, ast_node_lambda* fn) {
     ast_param* curr = fn->params;
     putchar('(');
     while (curr != NULL) {
-        printf("%.*s ", (int)curr->name.span_size, curr->name.span);
+        printf("%.*s ", (int)curr->name.span.span_size, curr->name.span.span);
 
         putchar(':');
         print_typename(curr->type);
@@ -263,7 +263,7 @@ static void walk_expr_stmt(ast_stmt_printer_t* self, ast_node_expr_stmt* node) {
 static void walk_var_decl(ast_stmt_printer_t* self, ast_node_var_decl* node) {
     char* op = node->mut ? "let-mut" : "let";
 
-    printf("(%s %.*s ", op, (int)node->name.span_size, node->name.span);
+    printf("(%s %.*s ", op, (int)node->name.span.span_size, node->name.span.span);
 
     if (node->typename != NULL) {
         putchar(':');
@@ -343,12 +343,12 @@ static void print_stmt(ast_stmt_node* node) {
 static void walk_function(ast_item_printer_t* self, ast_node_function* fn) {
     printf("(fn ");
 
-    printf("%.*s ", (int)fn->name.span_size, fn->name.span);
+    printf("%.*s ", (int)fn->name.span.span_size, fn->name.span.span);
 
     putchar('(');
     ast_param* curr = fn->params;
     while (curr != NULL) {
-        printf("%.*s ", (int)curr->name.span_size, curr->name.span);
+        printf("%.*s ", (int)curr->name.span.span_size, curr->name.span.span);
 
         putchar(':');
         print_typename(curr->type);
