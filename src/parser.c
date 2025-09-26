@@ -6,6 +6,7 @@
 #include <stdlib.h>
 
 #include "ast.h"
+#include "error_printer.h"
 
 typedef struct {
     lexer_t lexer;
@@ -19,6 +20,7 @@ typedef struct {
 
     /* Was there *any* error reported while parsing the code? */
     bool has_error;
+    error_printer_t error_printer;
 } parser_t;
 
 static ast_typename* function_typename(parser_t* parser);
@@ -64,76 +66,14 @@ static ast_expr_node* lambda(parser_t* parser);
  *
  * @returns true if curly braces are balanced, false otherwise.
  */
-static bool validate_curly_brace_balance(lexer_t lexer);
-
-
-static void vsyntax_error(
-    const char* source, token* tok, bool die, char const* fmt, va_list args
-) {
-    char* line_start = tok->span;
-    char* line_end = tok->span;
-    int line_len;
-    size_t tabs_count = 0;
-
-    /**
-     * Determine the start and the end of the line where token is present.
-     * We rely on the fact that token's span is a slice of the entire source
-     * program, i.e. the 'src' paramater.
-     */
-    while (line_start != source && *(line_start - 1) != '\n') {
-        if (*line_start == '\t') {
-            tabs_count++;
-        }
-
-        line_start--;
-    }
-
-    while (*line_end != '\0' && *line_end != '\n') {
-        line_end++;
-    }
-
-    line_len = (int)(line_end - line_start);
-
-    fprintf(stderr, "Syntax error at %ld:%ld:\n", tok->line, tok->col);
-    vfprintf(stderr, fmt, args);
-
-    fprintf(
-        stderr,
-        "\n%5ld | %.*s%s\n",
-        tok->line,
-        line_len,
-        line_start,
-        *line_end == '\0' ? "(end of file)" : ""
-    );
-
-    /*
-     * When dealing with tabs, we must pad with tabs instead of spaces
-     * to ensure correct alignment of '^' with the token it is pointing at.
-     */
-    for (size_t i = 0; i < tabs_count; i++) {
-        fputc('\t', stderr);
-    }
-
-    for (size_t i = tabs_count; i < tok->col + 7; i++) {
-        fputc(' ', stderr);
-    }
-
-    for (size_t i = 0; i < tok->span_size; i++) {
-        fputc('^', stderr);
-    }
-
-    fputc('\n', stderr);
-
-    if (die) {
-        exit(1);
-    }
-}
+static bool validate_curly_brace_balance(error_printer_t error_printer, lexer_t lexer);
 
 static void syntax_error_at_current(parser_t* parser, char const* fmt, ...) {
     parser->has_error = true;
     va_list args;
     va_start(args, fmt);
-    vsyntax_error(parser->lexer.src, &parser->curr, false, fmt, args);
+    parser->error_printer.error(parser->lexer.src, &parser->curr, ERROR_KIND_SYNTAX,
+                                 fmt, args);
     va_end(args);
 }
 
@@ -141,15 +81,18 @@ static void syntax_error_at_current_and_die(parser_t* parser, char const* fmt, .
     parser->has_error = true;
     va_list args;
     va_start(args, fmt);
-    vsyntax_error(parser->lexer.src, &parser->curr, true, fmt, args);
+    parser->error_printer.error(parser->lexer.src, &parser->curr, ERROR_KIND_SYNTAX,
+                                 fmt, args);
     va_end(args);
+    exit(1);
 }
 
 static void syntax_error_at_previous(parser_t* parser, char const* fmt, ...) {
     parser->has_error = true;
     va_list args;
     va_start(args, fmt);
-    vsyntax_error(parser->lexer.src, &parser->prev, false, fmt, args);
+    parser->error_printer.error(parser->lexer.src, &parser->prev, ERROR_KIND_SYNTAX,
+                                 fmt, args);
     va_end(args);
 }
 
@@ -157,16 +100,20 @@ static void syntax_error_at_previous_and_die(parser_t* parser, char const* fmt, 
     parser->has_error = true;
     va_list args;
     va_start(args, fmt);
-    vsyntax_error(parser->lexer.src, &parser->prev, true, fmt, args);
+    parser->error_printer.error(parser->lexer.src, &parser->prev, ERROR_KIND_SYNTAX,
+                                 fmt, args);
     va_end(args);
+    exit(1);
 }
 
 static void syntax_error_at_token(
-    char* src, token* token, char const* fmt, ...
+    error_printer_t error_printer, char* src, token* token,
+    char const* fmt, ...
 ) {
     va_list args;
     va_start(args, fmt);
-    vsyntax_error(src, token, false, fmt, args);
+    error_printer.error(src, token, ERROR_KIND_SYNTAX,
+                                 fmt, args);
     va_end(args);
 }
 
@@ -191,7 +138,8 @@ static void lex_e_print(lex_error e) {
     exit(1);
 }
 
-static parser_t make_parser(allocator_t* allocator, lexer_t lexer) {
+static parser_t make_parser(allocator_t* allocator, lexer_t lexer,
+                            error_printer_t error_printer) {
     return (parser_t){
         .lexer = lexer,
         .allocator = allocator,
@@ -200,6 +148,7 @@ static parser_t make_parser(allocator_t* allocator, lexer_t lexer) {
         .item_tail = NULL,
 
         .has_error = false,
+        .error_printer = error_printer,
     };
 }
 
@@ -295,8 +244,10 @@ static token expect(parser_t* parser, token_type tt, const char* fmt, ...) {
         parser->has_error = true;
         va_list args;
         va_start(args, fmt);
-        vsyntax_error(parser->lexer.src, &offending, true, fmt, args);
+        parser->error_printer.error(parser->lexer.src, &offending,
+                                    ERROR_KIND_SYNTAX, fmt, args);
         va_end(args);
+        exit(1);
     }
 
     return parser->prev;
@@ -893,7 +844,7 @@ static ast_expr_node* lambda(parser_t* parser) {
     return make_ast_lambda(parser->allocator, params_list, body, return_type);
 }
 
-static bool validate_curly_brace_balance(lexer_t lexer) {
+static bool validate_curly_brace_balance(error_printer_t error_printer, lexer_t lexer) {
     bool ret = true;
 
     token_result curr;
@@ -933,6 +884,7 @@ static bool validate_curly_brace_balance(lexer_t lexer) {
 
             /* This '}' is a stray. Report it. */
             syntax_error_at_token(
+                error_printer,
                 lexer.src,
                 &curr.t,
                 "unexpected closing delimiter '}'"
@@ -947,6 +899,7 @@ static bool validate_curly_brace_balance(lexer_t lexer) {
 
         for (size_t i = 0; i < opened_len; i++) {
             syntax_error_at_token(
+                error_printer,
                 lexer.src,
                 &opened[i],
                 "unclosed delimiter '{'"
@@ -958,15 +911,18 @@ static bool validate_curly_brace_balance(lexer_t lexer) {
     return ret;
 }
 
-bool parse(
-    allocator_t* allocator, char* src, size_t src_len, ast_item_node** out
-) {
-    parser_t parser = make_parser(allocator, make_lexer(src, src_len));
+bool parse_with_error_printer(
+    allocator_t* allocator, char* src, size_t src_len,
+    error_printer_t error_printer,
+    ast_item_node** out) {
+
+    parser_t parser = make_parser(allocator, make_lexer(src, src_len),
+                                  error_printer);
     advance(&parser);
 
     /* Pass 1: Check if the braces are balanced. */
 
-    if (!validate_curly_brace_balance(make_lexer(src, src_len))) {
+    if (!validate_curly_brace_balance(error_printer, make_lexer(src, src_len))) {
         /*
          * Regardless of success status, we must write the parsed AST to
          * \p{out}, which is empty in this case.
@@ -992,4 +948,12 @@ bool parse(
     *out = parser.item_head;
 
     return !parser.has_error;
+}
+
+bool parse(
+    allocator_t* allocator, char* src, size_t src_len, ast_item_node** out
+) {
+    return parse_with_error_printer(
+        allocator, src, src_len,
+        default_error_printer, out);
 }
