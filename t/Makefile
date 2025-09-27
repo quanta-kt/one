@@ -15,6 +15,7 @@ TEST_DIRECTORIES += ast
 TEST_DIRECTORIES += typecheck
 TEST_DIRECTORIES += lex
 TEST_DIRECTORIES += integration
+TEST_DIRECTORIES += error
 
 TEST_FILES = $(patsubst %, %/*.py, $(TEST_DIRECTORIES))
 

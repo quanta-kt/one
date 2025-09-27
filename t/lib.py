@@ -41,6 +41,25 @@ def stmt2sexpr(stmt: str) -> str:
     return sexpr[len(prefix) : -len(suffix)]
 
 
+def code2error_list(code: str) -> str:
+    """
+    Converts 'code' a list of error codes.
+    """
+    proc = subprocess.Popen(
+        ["code2error-list", code],
+        stdout=subprocess.PIPE,
+    )
+
+    proc.wait()
+    output = proc.stdout.read().decode().strip()
+
+    if output:
+       return output.split("\n")
+
+    # there is no point trying to split an empty line
+    return []
+
+
 def typecheck_passes(code: str) -> bool:
     """
     Invokes onec for typechecking, returns true if code passes type-check.
