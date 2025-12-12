@@ -1,6 +1,11 @@
 #include <stdio.h>
 #include <string.h>
 
+/* for putting stdout to binary mode on Windows */
+#ifdef _WIN32
+#include <fcntl.h>
+#endif
+
 #include "lex.h"
 
 int main(int argc, char** argv) {
@@ -8,6 +13,10 @@ int main(int argc, char** argv) {
         fprintf(stderr, "usage: %s <code>\n", argv[0]);
         return 1;
     }
+
+#ifdef _WIN32
+    _setmode(_fileno(stdout), _O_BINARY);
+#endif
 
     char* code = argv[1];
     size_t len = strlen(code);

@@ -8,6 +8,11 @@
 
 #include <stdio.h>
 
+/* for putting stdout to binary mode on Windows */
+#ifdef _WIN32
+#include <fcntl.h>
+#endif
+
 #include "alloc.h"
 #include "ast.h"
 #include "ast_printer.h"
@@ -18,6 +23,10 @@ int main(int argc, char** argv) {
         fprintf(stderr, "usage: %s <code>\n", argv[0]);
         return 1;
     }
+
+#ifdef _WIN32
+    _setmode(_fileno(stdout), _O_BINARY);
+#endif
 
     allocator_t* allocator = gpa();
 

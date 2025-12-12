@@ -3,6 +3,11 @@
 #include <string.h>
 #include <unistd.h>
 
+/* for putting stdout to binary mode on Windows */
+#ifdef _WIN32
+#include <fcntl.h>
+#endif
+
 #include "ast.h"
 #include "parser.h"
 #include "typecheck.h"
@@ -120,6 +125,10 @@ FILE* open_file_or_die(char* path) {
 
 int main(int argc, char** argv) {
     int ret;
+
+#ifdef _WIN32
+    _setmode(_fileno(stdout), _O_BINARY);
+#endif
 
     struct compiler_args args = parse_args(argc, argv);
     FILE* in = args.path == NULL ? stdin : open_file_or_die(args.path);
