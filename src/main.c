@@ -7,14 +7,7 @@
 #include "parser.h"
 #include "typecheck.h"
 
-/*
- * Only run typechecking, do not compile or execute.
- */
-static const char* OPT_TYPECHECK_ONLY = "--typecheck-only";
-static const char* OPT_TYPECHECK_ONLY_SHORT = "-t";
-
 struct compiler_args {
-    int typecheck_only : 1;
     char* path;
 };
 
@@ -40,10 +33,7 @@ struct compiler_args parse_args(int argc, char** argv) {
             print_usage_and_die(exec);
         }
 
-        if (strcmp(arg, OPT_TYPECHECK_ONLY) == 0 ||
-            strcmp(arg, OPT_TYPECHECK_ONLY_SHORT) == 0) {
-            ret.typecheck_only = 1;
-        } else if (memcmp(arg, "--", sizeof("--")) == 0 || arg[0] == '-') {
+        if (memcmp(arg, "--", sizeof("--")) == 0 || arg[0] == '-') {
             fprintf(stderr, "Invalid flag: '%s'\n", arg);
             print_usage_and_die(exec);
         } else {
@@ -82,6 +72,8 @@ size_t read_all(FILE* in, char** ptr) {
 }
 
 int run_repl(struct compiler_args* args) {
+    (void) args;
+
     char* line = NULL;
     size_t len;
 
@@ -91,10 +83,8 @@ int run_repl(struct compiler_args* args) {
         ast_item_node* ast = parse(allocator, line, len);
 
         if (typecheck(allocator, ast)) {
-            if (!args->typecheck_only) {
-                fprintf(stderr, "NOT IMPLEMENTED: Code execution is WIP.\n");
-                exit(1);
-            }
+            fprintf(stderr, "NOT IMPLEMENTED: Code execution is WIP.\n");
+            exit(1);
         }
 
         free_ast(allocator, ast);
@@ -104,6 +94,8 @@ int run_repl(struct compiler_args* args) {
 }
 
 int compile_file(struct compiler_args* args, FILE* file) {
+    (void) args;
+
     int ret = 0;
 
     char* buf;
@@ -118,10 +110,8 @@ int compile_file(struct compiler_args* args, FILE* file) {
         goto cleanup;
     }
 
-    if (!args->typecheck_only) {
-        fprintf(stderr, "NOT IMPLEMENTED: Code execution is WIP.\n");
-        ret = 2;
-    }
+    fprintf(stderr, "NOT IMPLEMENTED: Code execution is WIP.\n");
+    ret = 2;
 
 cleanup:
     free_ast(allocator, ast);

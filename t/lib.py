@@ -46,16 +46,15 @@ def typecheck_passes(code: str) -> bool:
     Invokes onec for typechecking, returns true if code passes type-check.
     """
 
-    proc = subprocess.Popen(
-        ["onec", "--typecheck-only"],
-        stdout=subprocess.PIPE,
-        stdin=subprocess.PIPE,
-    )
+    proc = subprocess.Popen(["typecheck", code])
 
-    proc.stdin.write(f"{code}\n".encode())
-    proc.stdin.close()
-
-    return proc.wait() == 0
+    match proc.wait():
+        case 1:
+            return False
+        case 0:
+            return True
+        case _:
+            raise Exception("Failed to typecheck")
 
 def code2token_list(code: str) -> str:
     """

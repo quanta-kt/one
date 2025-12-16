@@ -50,6 +50,7 @@ clean: clean-test
 
 TEST_HELPER_OBJS += code2token-list.o
 TEST_HELPER_OBJS += code2sexpr.o
+TEST_HELPER_OBJS += typecheck.o
 TEST_HELPER_OBJS := $(addprefix $(TEST_HELPER_BIN)/,$(TEST_HELPER_OBJS))
 
 $(TEST_HELPER_OBJS): $(TEST_HELPER_BIN)/%.o: \
