@@ -11,6 +11,7 @@
 #include "ast.h"
 #include "parser.h"
 #include "typecheck.h"
+#include "mmio.h"
 
 struct compiler_args {
     char* path;
@@ -57,45 +58,14 @@ struct compiler_args parse_args(int argc, char** argv) {
     return ret;
 }
 
-size_t read_all(FILE* in, char** ptr) {
-    const size_t block_size = 255;
-
-    char* buf = NULL;
-
-    // characters allocated
-    size_t size = 0;
-
-    // characters read
-    size_t len = 0;
-
-    size_t last_read = 0;
-    do {
-        size += block_size;
-        buf = realloc(buf, sizeof(char) * size);
-
-        char* block_start = buf + (size - block_size);
-        len += (last_read = fread(block_start, sizeof(char), block_size, in));
-
-    } while (last_read == block_size);
-
-    buf[len] = '\0';
-
-    *ptr = buf;
-    return len;
-}
-
-
-int compile_file(struct compiler_args* args, FILE* file) {
+int compile_file(struct compiler_args* args, mmio_mapping* mapping) {
     (void) args;
 
     int ret = 0;
 
-    char* buf;
-    size_t len = read_all(file, &buf);
-
     allocator_t* allocator = gpa();
 
-    ast_item_node* ast = parse(allocator, buf, len);
+    ast_item_node* ast = parse(allocator, (char*) mapping->ptr, mapping->length);
 
     if (!typecheck(allocator, ast)) {
         ret = 1;
@@ -106,20 +76,18 @@ int compile_file(struct compiler_args* args, FILE* file) {
 
 cleanup:
     free_ast(allocator, ast);
-    free(buf);
 
     return ret;
 }
 
-FILE* open_file_or_die(char* path) {
-    FILE* f = fopen(path, "r");
-
-    if (f == NULL) {
+mmio_mapping open_file_or_die(char* path) {
+    mmio_mapping ret = { 0 };
+    if (!mmio_mm_path(path, &ret)) {
         fprintf(stderr, "Unable to open file '%s'\n", path);
         exit(1);
     }
 
-    return f;
+    return ret;
 }
 
 int main(int argc, char** argv) {
@@ -130,10 +98,10 @@ int main(int argc, char** argv) {
 #endif
 
     struct compiler_args args = parse_args(argc, argv);
-    FILE* in = args.path == NULL ? stdin : open_file_or_die(args.path);
 
-    ret = compile_file(&args, in);
-    fclose(in);
+    mmio_mapping mapping = open_file_or_die(args.path);
+    ret = compile_file(&args, &mapping);
+    mmio_unmap(&mapping);
 
     return ret;
 }
