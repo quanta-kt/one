@@ -8,10 +8,12 @@
 #include <fcntl.h>
 #endif
 
+#include "arena.h"
 #include "ast.h"
+#include "mmio.h"
+#include "mmio_alloc.h"
 #include "parser.h"
 #include "typecheck.h"
-#include "mmio.h"
 
 struct compiler_args {
     char* path;
@@ -63,11 +65,12 @@ int compile_file(struct compiler_args* args, mmio_mapping* mapping) {
 
     int ret = 0;
 
-    allocator_t* allocator = gpa();
+    arena* arena = arena_make(&mmio_alloc, mmio_get_page_size());
+    allocator_t allocator = arena_get_alloc(arena);
 
-    ast_item_node* ast = parse(allocator, (char*) mapping->ptr, mapping->length);
+    ast_item_node* ast = parse(&allocator, (char*) mapping->ptr, mapping->length);
 
-    if (!typecheck(allocator, ast)) {
+    if (!typecheck(&allocator, ast)) {
         ret = 1;
         goto cleanup;
     }
@@ -75,7 +78,7 @@ int compile_file(struct compiler_args* args, mmio_mapping* mapping) {
     fprintf(stderr, "NOT IMPLEMENTED: Code execution is WIP.\n");
 
 cleanup:
-    free_ast(allocator, ast);
+    arena_destroy(arena);
 
     return ret;
 }

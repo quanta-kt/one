@@ -13,19 +13,23 @@ OUTPUT = $(BUILD_DIR)/onec
 export PATH := $(BUILD_DIR):$(PATH)
 
 LIB_OBJ += alloc.o
+LIB_OBJ += arena.o
 LIB_OBJ += ast.o
 LIB_OBJ += ast_printer.o
 LIB_OBJ += lex.o
 LIB_OBJ += mmio.o
+LIB_OBJ += mmio_alloc.o
 LIB_OBJ += typecheck.o
 LIB_OBJ += parser.o
 LIB_OBJ := $(addprefix $(BUILD_DIR)/,$(LIB_OBJ))
 
 LIB_HEADERS += alloc.h
+LIB_HEADERS += arena.h
 LIB_HEADERS += ast.h
 LIB_HEADERS += ast_printer.h
 LIB_HEADERS += lex.h
 LIB_HEADERS += mmio.h
+LIB_HEADERS += mmio_alloc.h
 LIB_HEADERS += parser.h
 LIB_HEADERS += typecheck.h
 LIB_HEADERS += vec.h

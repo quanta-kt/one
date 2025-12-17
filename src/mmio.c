@@ -43,6 +43,52 @@ static int64_t filesize(file_des fd) {
 #endif
 }
 
+size_t mmio_get_page_size() {
+#ifdef _WIN32
+    SYSTEM_INFO info;
+    GetSystemInfo(&info);
+    return info.dwPageSize;
+#else
+    return (size_t) sysconf(_SC_PAGE_SIZE);
+#endif
+}
+
+void* mmio_virtual_alloc(size_t size) {
+#ifdef _WIN32
+    void* ret = VirtualAlloc(NULL, size, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+    if (ret == NULL) {
+        fprintf(stderr, "VirtualAlloc: unable to allocate\n");
+        return NULL;
+    }
+#else
+    void* ret = mmap(NULL, size,
+        PROT_READ | PROT_WRITE,
+        MAP_ANONYMOUS | MAP_PRIVATE,
+        -1, 0);
+
+    if (ret == MAP_FAILED) {
+        perror("mmap");
+        return NULL;
+    }
+#endif
+
+    return ret;
+}
+
+void mmio_virtual_free(void* ptr, size_t size) {
+#ifdef _WIN32
+    (void) size;
+
+    if (!VirtualFree(ptr, 0, MEM_RELEASE)) {
+        fprintf(stderr, "VirtualFree: unable to free\n");
+    }
+#else
+    if (munmap(ptr, size) == -1) {
+        perror("munmap");
+    }
+#endif
+}
+
 bool mmio_mm_fd(file_des fd, mmio_mapping *out) {
     bool ret = true;
 

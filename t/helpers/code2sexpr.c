@@ -13,9 +13,11 @@
 #include <fcntl.h>
 #endif
 
-#include "alloc.h"
+#include "arena.h"
 #include "ast.h"
 #include "ast_printer.h"
+#include "mmio.h"
+#include "mmio_alloc.h"
 #include "parser.h"
 
 int main(int argc, char** argv) {
@@ -28,9 +30,12 @@ int main(int argc, char** argv) {
     _setmode(_fileno(stdout), _O_BINARY);
 #endif
 
-    allocator_t* allocator = gpa();
+    arena* arena = arena_make(&mmio_alloc, mmio_get_page_size());
+    allocator_t allocator = arena_get_alloc(arena);
 
-    ast_item_node* ast = parse(allocator, argv[1], strlen(argv[1]));
+    ast_item_node* ast = parse(&allocator, argv[1], strlen(argv[1]));
     print_ast(ast);
-    free_ast(allocator, ast);
+
+    arena_destroy(arena);
 }
+

@@ -6,7 +6,9 @@
 
 #include <stdio.h>
 
-#include "alloc.h"
+#include "arena.h"
+#include "mmio.h"
+#include "mmio_alloc.h"
 #include "ast.h"
 #include "parser.h"
 #include "typecheck.h"
@@ -21,14 +23,15 @@ int main(int argc, char** argv) {
     size_t len = strlen(code);
     int ret = 1;
 
-    allocator_t* allocator = gpa();
+    arena* arena = arena_make(&mmio_alloc, mmio_get_page_size());
+    allocator_t allocator = arena_get_alloc(arena);
 
-    ast_item_node* ast = parse(allocator, code, len);
-    if (typecheck(allocator, ast)) {
+    ast_item_node* ast = parse(&allocator, code, len);
+    if (typecheck(&allocator, ast)) {
         ret = 0;
     }
 
-    free_ast(allocator, ast);
+    arena_destroy(arena);
 
     return ret;
 }
