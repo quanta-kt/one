@@ -103,7 +103,6 @@ int compile_file(struct compiler_args* args, FILE* file) {
     }
 
     fprintf(stderr, "NOT IMPLEMENTED: Code execution is WIP.\n");
-    ret = 2;
 
 cleanup:
     free_ast(allocator, ast);

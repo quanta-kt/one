@@ -1,7 +1,7 @@
 import subprocess
 
 
-def invoke_onec(args: list[str], stdin: str) -> tuple[str, int]:
+def invoke_onec(args: list[str], stdin: str = "") -> tuple[str, int]:
     proc = subprocess.Popen(
         ["onec", *args],
         stdout=subprocess.PIPE,
