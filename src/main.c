@@ -29,16 +29,24 @@ struct compiler_args parse_args(int argc, char** argv) {
     while (argc--) {
         char* arg = *(argv++);
 
-        if (ret.path != NULL) {
-            print_usage_and_die(exec);
-        }
-
         if (memcmp(arg, "--", sizeof("--")) == 0 || arg[0] == '-') {
+
+            /* Flags must appear after path */
+            if (ret.path == NULL) {
+                fprintf(stderr, "Expected filename before flag '%s'\n", arg);
+                print_usage_and_die(exec);
+            }
+
             fprintf(stderr, "Invalid flag: '%s'\n", arg);
             print_usage_and_die(exec);
         } else {
             ret.path = arg;
         }
+    }
+
+    if (ret.path == NULL) {
+        fprintf(stderr, "Expected path to a source file.\n");
+        print_usage_and_die(exec);
     }
 
     return ret;
@@ -71,27 +79,6 @@ size_t read_all(FILE* in, char** ptr) {
     return len;
 }
 
-int run_repl(struct compiler_args* args) {
-    (void) args;
-
-    char* line = NULL;
-    size_t len;
-
-    allocator_t* allocator = gpa();
-
-    while (getline(&line, &len, stdin) != -1) {
-        ast_item_node* ast = parse(allocator, line, len);
-
-        if (typecheck(allocator, ast)) {
-            fprintf(stderr, "NOT IMPLEMENTED: Code execution is WIP.\n");
-            exit(1);
-        }
-
-        free_ast(allocator, ast);
-    }
-
-    return 0;
-}
 
 int compile_file(struct compiler_args* args, FILE* file) {
     (void) args;
@@ -137,15 +124,8 @@ int main(int argc, char** argv) {
     struct compiler_args args = parse_args(argc, argv);
     FILE* in = args.path == NULL ? stdin : open_file_or_die(args.path);
 
-    if (in == stdin && isatty(STDIN_FILENO)) {
-        ret = run_repl(&args);
-    } else {
-        ret = compile_file(&args, in);
-    }
-
-    if (in != stdin) {
-        fclose(in);
-    }
+    ret = compile_file(&args, in);
+    fclose(in);
 
     return ret;
 }
