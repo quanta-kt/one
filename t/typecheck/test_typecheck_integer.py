@@ -70,7 +70,7 @@ def test_different_integer_types_are_not_compatible():
     assert not typecheck_passes("""
     fn main() {
         let a: i16;
-        let b: iu = a;
+        let b: i8 = a;
     }
     """)
 
